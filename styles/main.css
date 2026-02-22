@@ -63,54 +63,67 @@ body {
 
 @media screen and (max-width: 500px) {
     .popup-box {
-        padding: 16px;
+        padding: 12px;
         border-width: 4px;
         border-radius: 12px;
     }
 
     .quiz-question {
-        font-size: 44px;
+        font-size: 32px;
     }
 
     .choice-btn {
-        font-size: 28px;
-        padding: 14px 6px;
+        font-size: 20px;
+        padding: 10px 4px;
     }
 
     #gold-display {
-        font-size: 16px;
-        padding: 6px 12px;
+        font-size: 14px;
+        padding: 4px 10px;
+        border-width: 2px;
     }
 
     #shop-open-btn,
     .persistent-btn {
-        font-size: 16px;
-        padding: 6px 12px;
+        font-size: 14px;
+        padding: 4px 10px;
+        border-width: 2px;
     }
 
     .buy-btn {
-        font-size: 16px;
-        padding: 10px 14px;
+        font-size: 14px;
+        padding: 8px 12px;
     }
 
     .up-info h3 {
-        font-size: 16px;
+        font-size: 14px;
     }
 
     .up-info p {
-        font-size: 12px;
+        font-size: 10px;
+    }
+
+    .up-icon {
+        font-size: 28px;
+        width: 40px;
     }
 
     .npc-avatar {
-        font-size: 60px;
+        font-size: 50px;
     }
 
     .npc-bubble {
-        font-size: 15px;
+        font-size: 13px;
+        padding: 10px;
     }
 
     .encyclopedia-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 10px;
+    }
+
+    .fish-card h3 {
+        font-size: 16px;
     }
 }
 

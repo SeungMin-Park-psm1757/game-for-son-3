@@ -54,36 +54,62 @@ export default class IntroScene extends Phaser.Scene {
         const pm = window.gameManagers.playerModel;
 
         // 챕터 선택 버튼들 생성 (언락되지 않은 챕터는 비활성화/회색 처리)
-        this.createChapterButton(width / 2, height * 0.50, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
-        this.createChapterButton(width / 2, height * 0.65, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
-        this.createChapterButton(width / 2, height * 0.80, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
+        // 모바일 최적화: 버튼 간격을 조금 더 좁히고 크기 조정
+        this.createChapterButton(width / 2, height * 0.48, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
+        this.createChapterButton(width / 2, height * 0.62, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
+        this.createChapterButton(width / 2, height * 0.76, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
 
         // 진행 상태 안내 텍스트
+        const goalFontSize = width < 360 ? '16px' : '20px';
         if (pm.currentChapter <= 3) {
             const goal = pm.chapterGoals[pm.currentChapter];
             const nextNames = { 1: '연안', 2: '먼 바다', 3: '엔딩' };
             const nextName = nextNames[pm.currentChapter] || '';
             const percent = Math.min(100, Math.floor((pm.gold / goal) * 100));
-            this.add.text(width / 2, height * 0.93, `🎯 ${nextName} 해금: ${pm.gold} / ${goal} G (${percent}%)`, {
-                fontSize: '20px', fontFamily: 'Arial', color: '#FFD700',
+            this.add.text(width / 2, height * 0.90, `🎯 ${nextName} 해금: ${pm.gold} / ${goal} G (${percent}%)`, {
+                fontSize: goalFontSize, fontFamily: 'Arial', color: '#FFD700',
                 stroke: '#000', strokeThickness: 3
             }).setOrigin(0.5);
         } else {
-            this.add.text(width / 2, height * 0.93, '🎉 모든 챕터 클리어! 상점에서 엔딩 아이템을 확인하세요!', {
-                fontSize: '20px', fontFamily: 'Arial', color: '#FFD700',
+            this.add.text(width / 2, height * 0.90, '🎉 모든 챕터 클리어! 상점에서 엔딩 아이템을 확인하세요!', {
+                fontSize: goalFontSize, fontFamily: 'Arial', color: '#FFD700',
                 stroke: '#000', strokeThickness: 3
             }).setOrigin(0.5);
         }
+
+        // --- 초기화 버튼 (좌측 하단) ---
+        const resetBtnSize = width < 360 ? '14px' : '18px';
+        const resetBtn = this.add.text(20, height - 30, '⚠️ 초기화', {
+            fontSize: resetBtnSize,
+            fontFamily: 'Arial',
+            color: '#FFCCCC',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            padding: { x: 8, y: 5 }
+        }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
+
+        resetBtn.on('pointerdown', () => {
+            const password = prompt("게임을 초기화하시겠습니까? (비밀번호를 입력하세요: 5)");
+            if (password === "5") {
+                localStorage.clear();
+                alert("데이터가 초기화되었습니다.");
+                window.location.reload();
+            } else if (password !== null) {
+                alert("비밀번호가 틀렸습니다.");
+            }
+        });
+
+        resetBtn.on('pointerover', () => resetBtn.setTint(0xff0000));
+        resetBtn.on('pointerout', () => resetBtn.clearTint());
     }
 
     createChapterButton(x, y, text, regionCode, color, isUnlocked) {
-        // Button size responsive to screen width (max 400, min 260)
-        const maxBtnWidth = 400;
-        const minBtnWidth = 260;
-        const btnWidth = Phaser.Math.Clamp(Math.round(this.scale.width * 0.9), minBtnWidth, maxBtnWidth);
-        const btnHeight = 80; // keep comfortable touch target
+        // Button size responsive to screen width (mobile optimized)
+        const maxBtnWidth = 320; // Reduced from 400
+        const minBtnWidth = 240;
+        const btnWidth = Phaser.Math.Clamp(Math.round(this.scale.width * 0.8), minBtnWidth, maxBtnWidth);
+        const btnHeight = 66; // Reduced from 80
         // Adjust font size for small screens
-        const btnFontSize = this.scale.width < 360 ? '24px' : '28px';
+        const btnFontSize = this.scale.width < 360 ? '20px' : '24px'; // Reduced from 24px/28px
 
 
         // 버튼 컨테이너
