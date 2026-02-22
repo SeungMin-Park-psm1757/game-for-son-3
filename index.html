@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>정우의 낚시 게임</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <!-- Phaser 3 script from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+</head>
+
+<body>
+    <div id="game-container"></div>
+
+    <!-- UI Overlay (Canvas 위쪽에 위치) -->
+    <div id="ui-layer">
+        <!-- 추후 상점, 퀴즈, 인벤토리 등의 DOM 요소가 추가될 영역 -->
+    </div>
+
+    <!-- 모바일 세로 모드 경고창 -->
+    <div id="orientation-warning">
+        <div style="font-size: 50px; margin-bottom: 20px;">🔄</div>
+        가로 화면으로 돌려서<br>플레이해 주세요!
+    </div>
+
+    <!-- ES6 Module Entry -->
+    <script type="module" src="src/main.js"></script>
+</body>
+
+</html>
