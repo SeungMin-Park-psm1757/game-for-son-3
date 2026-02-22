@@ -63,67 +63,75 @@ body {
 
 @media screen and (max-width: 500px) {
     .popup-box {
-        padding: 12px;
-        border-width: 4px;
+        padding: 10px;
+        border-width: 3px;
         border-radius: 12px;
     }
 
     .quiz-question {
-        font-size: 32px;
+        font-size: 28px;
     }
 
     .choice-btn {
-        font-size: 20px;
-        padding: 10px 4px;
+        font-size: 18px;
+        padding: 8px 4px;
+    }
+
+    /* 우측 상단 상시 UI 과감하게 축소 */
+    #persistent-ui {
+        top: 10px;
+        right: 10px;
+        gap: 6px;
     }
 
     #gold-display {
-        font-size: 14px;
-        padding: 4px 10px;
+        font-size: 12px;
+        padding: 3px 8px;
         border-width: 2px;
     }
 
     #shop-open-btn,
     .persistent-btn {
-        font-size: 14px;
-        padding: 4px 10px;
+        font-size: 12px;
+        padding: 4px 8px;
         border-width: 2px;
+        box-shadow: 0 2px 0 #cc7000;
     }
 
     .buy-btn {
-        font-size: 14px;
-        padding: 8px 12px;
+        font-size: 13px;
+        padding: 6px 10px;
     }
 
     .up-info h3 {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .up-info p {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     .up-icon {
-        font-size: 28px;
-        width: 40px;
+        font-size: 24px;
+        width: 35px;
     }
 
     .npc-avatar {
-        font-size: 50px;
+        font-size: 40px;
     }
 
     .npc-bubble {
-        font-size: 13px;
-        padding: 10px;
+        font-size: 12px;
+        padding: 8px;
     }
 
     .encyclopedia-grid {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 8px;
     }
 
     .fish-card h3 {
-        font-size: 16px;
+        font-size: 14px;
     }
 }
 
