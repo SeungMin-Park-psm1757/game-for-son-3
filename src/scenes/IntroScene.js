@@ -134,6 +134,16 @@ export default class IntroScene extends Phaser.Scene {
 
         button.add([bg, btnText]);
 
+        // 펄스 애니메이션 추가 ( Phraser Tween 사용)
+        this.tweens.add({
+            targets: button,
+            scale: 1.02,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
         if (!isUnlocked) {
             // 잠긴 챕터: 상호작용 완전 비활성화
             bg.disableInteractive();

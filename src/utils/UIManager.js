@@ -135,7 +135,7 @@ export default class UIManager {
         this.bookBtn.innerText = '📖 도감 (Book)';
         this.bookBtn.onclick = () => this.openEncyclopedia();
         this.bookBtn.className = 'persistent-btn';
-        this.shopBtn.className = 'persistent-btn';
+        this.shopBtn.className = 'persistent-btn pulse-anim';
 
         // 음소거 토글 버튼
         this.muteBtn = document.createElement('button');

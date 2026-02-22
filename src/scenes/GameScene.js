@@ -129,15 +129,21 @@ export default class GameScene extends Phaser.Scene {
         });
 
         // --- 뒤로 가기 버튼 (좌측 상단) ---
-        const backBtnFontSize = this.scale.width < 360 ? '32px' : '26px';
-        const backBtn = this.add.text(20, 20, '⬅️ 뒤로', {
+        // --- 뒤로 가기 버튼 (좌측 상단) ---
+        const backBtnFontSize = this.scale.width < 360 ? '16px' : '20px'; // 과감하게 축소
+        const backBtn = this.add.text(10, 10, '⬅️ 뒤로 가기', {
             fontSize: backBtnFontSize,
             fontFamily: 'Arial', color: '#FFFFFF',
-            stroke: '#000000', strokeThickness: 4,
-            backgroundColor: 'rgba(0,0,0,0.4)', padding: { x: 12, y: 8 }
+            stroke: '#000000', strokeThickness: 3,
+            backgroundColor: '#444444',
+            padding: { x: 8, y: 5 }
         }).setDepth(20).setInteractive({ useHandCursor: true });
+
+        backBtn.on('pointerover', () => backBtn.setBackgroundColor('#666666'));
+        backBtn.on('pointerout', () => backBtn.setBackgroundColor('#444444'));
+
         backBtn.on('pointerdown', () => {
-            // 진행 중인 모든 트윈 정리 후 IntroScene으로 복귀
+            window.gameManagers.soundManager.playCoin();
             this.tweens.killAll();
             this.scene.start('IntroScene');
         });
@@ -613,6 +619,26 @@ export default class GameScene extends Phaser.Scene {
             // 전역 PlayerModel에 골드 추가
             window.gameManagers.playerModel.addGold(finalGold);
             console.log(`획득 골드: ${finalGold} (현재 총합: ${window.gameManagers.playerModel.gold})`);
+
+            // --- 획득 금액 플로팅 텍스트 애니메이션 추가 ---
+            const floatingText = this.add.text(this.scale.width / 2, this.scale.height * 0.5, `+${finalGold}G`, {
+                fontSize: '48px',
+                fontFamily: 'Arial',
+                color: '#FFD700',
+                stroke: '#000',
+                strokeThickness: 6,
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setDepth(100);
+
+            this.tweens.add({
+                targets: floatingText,
+                y: floatingText.y - 120,
+                alpha: 0,
+                duration: 1500,
+                ease: 'Power2',
+                onComplete: () => floatingText.destroy()
+            });
+            // ------------------------------------------
 
             this.updateGoalText();
 

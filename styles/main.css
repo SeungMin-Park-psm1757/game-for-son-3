@@ -100,11 +100,17 @@ body {
 
     .buy-btn {
         font-size: 13px;
-        padding: 6px 10px;
+        padding: 5px 10px;
+    }
+
+    .upgrade-item {
+        padding: 8px;
+        gap: 5px;
     }
 
     .up-info h3 {
-        font-size: 13px;
+        font-size: 12px;
+        margin-bottom: 2px;
     }
 
     .up-info p {
@@ -112,8 +118,8 @@ body {
     }
 
     .up-icon {
-        font-size: 24px;
-        width: 35px;
+        font-size: 20px;
+        width: 30px;
     }
 
     .npc-avatar {
@@ -132,6 +138,14 @@ body {
 
     .fish-card h3 {
         font-size: 14px;
+    }
+
+    .shop-header h2 {
+        font-size: 24px;
+    }
+
+    .shop-gold {
+        font-size: 18px;
     }
 }
 
@@ -235,6 +249,25 @@ body {
     100% {
         transform: translateX(0);
     }
+}
+
+/* 맥박(Pulse) 애니메이션 */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.pulse-anim {
+    animation: pulse 2s infinite ease-in-out;
 }
 
 /* --- 상시 유지 UI (오른쪽 상단) --- */
