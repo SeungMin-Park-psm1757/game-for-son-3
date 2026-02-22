@@ -240,10 +240,10 @@ body {
 /* --- 상시 유지 UI (오른쪽 상단) --- */
 #persistent-ui {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 8px;
+    right: 8px;
     display: flex;
-    gap: 15px;
+    gap: 5px;
     align-items: center;
     z-index: 20;
 }
@@ -251,23 +251,23 @@ body {
 #gold-display {
     background: rgba(0, 0, 0, 0.6);
     color: #FFD700;
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-size: 24px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
     font-weight: bold;
-    border: 3px solid #FFD700;
+    border: 2px solid #FFD700;
 }
 
 #shop-open-btn {
     background: #FF8C00;
     color: white;
-    border: 3px solid #ffba66;
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-size: 24px;
+    border: 2px solid #ffba66;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 0 #cc7000;
+    box-shadow: 0 2px 0 #cc7000;
     transition: transform 0.1s, box-shadow 0.1s;
 }
 
@@ -546,13 +546,13 @@ body {
 .persistent-btn {
     background: #FF8C00;
     color: white;
-    border: 3px solid #ffba66;
-    padding: 10px 20px;
-    border-radius: 30px;
-    font-size: 24px;
+    border: 2px solid #ffba66;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 0 #cc7000;
+    box-shadow: 0 2px 0 #cc7000;
     transition: transform 0.1s, box-shadow 0.1s;
 }
 
