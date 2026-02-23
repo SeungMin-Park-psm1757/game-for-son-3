@@ -88,13 +88,14 @@ export default class IntroScene extends Phaser.Scene {
         }).setOrigin(0, 0.5).setInteractive({ useHandCursor: true });
 
         resetBtn.on('pointerdown', () => {
-            const password = prompt("게임을 초기화하시겠습니까? (비밀번호를 입력하세요: 5)");
-            if (password === "5") {
-                localStorage.clear();
-                alert("데이터가 초기화되었습니다.");
-                window.location.reload();
-            } else if (password !== null) {
-                alert("비밀번호가 틀렸습니다.");
+            const firstConfirm = confirm("⚠️ 경고: 모든 게임 데이터(골드, 강화 능력치, 물고기 도감)가 영구적으로 삭제됩니다.\n정말로 초기화하시겠습니까?");
+            if (firstConfirm) {
+                const secondConfirm = confirm("다시 한번 확인합니다. 정말 모든 데이터를 지울까요? 이 작업은 취소할 수 없습니다.");
+                if (secondConfirm) {
+                    localStorage.removeItem('fishingGameData');
+                    alert("데이터가 초기화되었습니다. 게임을 다시 시작합니다.");
+                    window.location.reload();
+                }
             }
         });
 

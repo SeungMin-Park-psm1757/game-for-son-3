@@ -13,8 +13,8 @@ export default class UIManager {
     // --- 수학 퀴즈 시스템 (도상학 기반 물고기 아이콘 시각화) ---
     showMathQuiz() {
         return new Promise((resolve) => {
-            if (this.isQuizActive) { resolve(false); return; }
-            if (Math.random() > 0.5) { resolve(false); return; }
+            if (this.isQuizActive) { resolve(null); return; }
+            if (Math.random() > 0.5) { resolve(null); return; }
 
             this.isQuizActive = true;
             this.container.style.pointerEvents = 'auto';
@@ -99,12 +99,86 @@ export default class UIManager {
             clickedBtn.innerHTML += ' ⭕';
             const praise = document.createElement('div');
             praise.className = 'praise-text';
-            praise.innerText = '정답! 보너스 10% 추가!';
+            praise.innerText = '정답! 보너스 20% 추가!';
             this.currentPopup.appendChild(praise);
         } else {
             clickedBtn.classList.add('wrong');
             clickedBtn.innerHTML += ' ❌';
+            const penalty = document.createElement('div');
+            penalty.className = 'penalty-text';
+            penalty.innerText = '오답! 금액 50% 삭감...';
+            this.currentPopup.appendChild(penalty);
         }
+    }
+
+    // --- 타이핑 퀴즈 시스템 (초등 1학년 수준) ---
+    showTypingQuiz() {
+        return new Promise((resolve) => {
+            if (this.isQuizActive) { resolve(false); return; }
+            this.isQuizActive = true;
+            this.container.style.pointerEvents = 'auto';
+
+            const wordList = [
+                '학교', '친구', '우유', '사과', '나무', '하늘', '바다', '나비', '기차', '포도',
+                '오이', '가지', '모자', '구두', '바지', '치마', '누나', '언니', '형아', '동생',
+                '엄마', '아빠', '우산', '비누', '노래', '공부', '놀이', '노트', '연필', '지우개'
+            ];
+            const targetWord = wordList[Math.floor(Math.random() * wordList.length)];
+
+            const popupHTML = `
+                <div id="quiz-popup" class="popup-box">
+                    <h2>✏️ 반짝반짝 받아쓰기! ✏️</h2>
+                    <p style="font-size:20px; color:#666; margin-bottom:15px;">아래 단어를 똑같이 써보세요!</p>
+                    <div class="typing-word-area">
+                        <span class="typing-target">${targetWord}</span>
+                    </div>
+                    <div class="quiz-input-area">
+                        <input type="text" id="typing-input" class="quiz-input" autocomplete="off" autofocus placeholder="여기에 입력..." />
+                    </div>
+                    <div id="typing-feedback" style="margin-top:15px; min-height:30px; font-weight:bold;"></div>
+                    <button id="typing-submit-btn" class="choice-btn" style="margin-top:20px; font-size:24px; width:80%;">확인!</button>
+                </div>
+            `;
+
+            this.container.innerHTML = popupHTML;
+            this.currentPopup = document.getElementById('quiz-popup');
+            const inputField = document.getElementById('typing-input');
+            const submitBtn = document.getElementById('typing-submit-btn');
+            const feedbackArea = document.getElementById('typing-feedback');
+
+            // 포커스 강제 (모바일 대응 고려)
+            setTimeout(() => inputField.focus(), 100);
+
+            const checkAnswer = () => {
+                const userInput = inputField.value.trim();
+                const isCorrect = userInput === targetWord;
+
+                inputField.disabled = true;
+                submitBtn.disabled = true;
+
+                if (isCorrect) {
+                    window.gameManagers.soundManager.playSuccess();
+                    feedbackArea.style.color = '#FF1493';
+                    feedbackArea.innerText = '우와! 완벽해! 보너스 20% 추가!';
+                    inputField.classList.add('correct-input');
+                } else {
+                    window.gameManagers.soundManager.playError();
+                    feedbackArea.style.color = '#DC143C';
+                    feedbackArea.innerText = `아쉬워요! 정답은 '${targetWord}'였어요.`;
+                    inputField.classList.add('wrong-input');
+                }
+
+                setTimeout(() => {
+                    this.closePopup();
+                    resolve(isCorrect);
+                }, 1500);
+            };
+
+            submitBtn.addEventListener('click', checkAnswer);
+            inputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') checkAnswer();
+            });
+        });
     }
 
     closePopup() {
@@ -325,6 +399,18 @@ export default class UIManager {
                     bubble.innerText = successQuotes[Math.floor(Math.random() * successQuotes.length)];
                     bubble.classList.add('quiz-shake');
                     setTimeout(() => bubble.classList.remove('quiz-shake'), 400);
+
+                    // 낚싯대(Rod Power) 업그레이드 시 캐릭터 시각적 업데이트 트리거
+                    if (statName === 'rodPower') {
+                        const phaserGame = window.gameManagers._phaserGame;
+                        if (phaserGame && phaserGame.scene.isActive('GameScene')) {
+                            const gameScene = phaserGame.scene.getScene('GameScene');
+                            if (gameScene && typeof gameScene.updateCharacterTexture === 'function') {
+                                gameScene.updateCharacterTexture();
+                            }
+                        }
+                    }
+
                     this.openShop();
                 } else {
                     window.gameManagers.soundManager.playError();

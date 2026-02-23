@@ -109,12 +109,12 @@ body {
     }
 
     .up-info h3 {
-        font-size: 12px;
+        font-size: 16px;
         margin-bottom: 2px;
     }
 
     .up-info p {
-        font-size: 9px;
+        font-size: 12px;
     }
 
     .up-icon {
@@ -127,8 +127,28 @@ body {
     }
 
     .npc-bubble {
-        font-size: 12px;
+        font-size: 14px;
         padding: 8px;
+    }
+
+    /* 상점 레이아웃 최적화 */
+    .shop-content {
+        flex-direction: column !important;
+        gap: 10px;
+    }
+
+    #shop-popup {
+        padding: 15px;
+    }
+
+    .shop-npc {
+        flex: none;
+        padding: 10px;
+    }
+
+    .npc-avatar {
+        font-size: 40px;
+        margin-bottom: 5px;
     }
 
     .encyclopedia-grid {
@@ -141,11 +161,16 @@ body {
     }
 
     .shop-header h2 {
-        font-size: 24px;
+        font-size: 20px;
     }
 
     .shop-gold {
-        font-size: 18px;
+        font-size: 14px;
+    }
+
+    #shop-close-btn {
+        font-size: 14px;
+        padding: 5px 10px;
     }
 }
 
@@ -204,6 +229,14 @@ body {
     font-size: 28px;
     font-weight: bold;
     color: #FF1493;
+    animation: popUp 0.5s ease-out;
+}
+
+.penalty-text {
+    margin-top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #8B0000;
     animation: popUp 0.5s ease-out;
 }
 
@@ -695,6 +728,51 @@ body {
     50% {
         transform: scale(1.1);
     }
+}
+
+/* --- 타이핑 퀴즈 전용 스타일 --- */
+.typing-word-area {
+    background: #fff;
+    border: 4px solid #FF1493;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.typing-target {
+    font-size: 48px;
+    font-weight: bold;
+    color: #333;
+    letter-spacing: 5px;
+}
+
+.quiz-input-area {
+    margin: 20px 0;
+}
+
+.quiz-input {
+    width: 80%;
+    font-size: 32px;
+    padding: 10px;
+    border: 4px solid #4169E1;
+    border-radius: 10px;
+    text-align: center;
+    outline: none;
+}
+
+.quiz-input:focus {
+    border-color: #FFD700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.correct-input {
+    border-color: #32CD32 !important;
+    background-color: #f0fff0;
+}
+
+.wrong-input {
+    border-color: #DC143C !important;
+    background-color: #fff0f0;
 }
 
 /* NPC 콧수염 이모지 */

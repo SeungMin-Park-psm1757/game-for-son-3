@@ -96,9 +96,9 @@ export default class GameScene extends Phaser.Scene {
         else if (this.region === 2) charY = height * 0.85;
         else charY = height * 0.8;
 
-        this.character = this.add.image(width / 2, charY, 'character').setDepth(3);
+        const charTexture = this.getCharacterTextureKey();
+        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3);
 
-        // 낚싯줄 그리기용 Graphics 객체 생성
         this.fishingLine = this.add.graphics();
         this.fishingLine.setDepth(1); // 찌(2) 아래, 물고기(1)와 동일선상 (물 위)
 
@@ -107,7 +107,6 @@ export default class GameScene extends Phaser.Scene {
         this.lure.setScale(1.2); // 새로 만들어진 32x32 픽셀 기준 1.2배 확대
 
         // 물고기 (Fish) 스프라이트 - 초기 숨김 (나중에 텍스처 변경)
-        // 처음에 dummy로 아무 텍스처나 잡아둠 (어차피 안 보임)
         this.fish = this.add.image(0, 0, 'fish_pirami').setVisible(false).setDepth(1);
 
         // 큰 느낌표 텍스트 (입질용)
@@ -129,8 +128,7 @@ export default class GameScene extends Phaser.Scene {
         });
 
         // --- 뒤로 가기 버튼 (좌측 상단) ---
-        // --- 뒤로 가기 버튼 (좌측 상단) ---
-        const backBtnFontSize = this.scale.width < 360 ? '16px' : '20px'; // 과감하게 축소
+        const backBtnFontSize = width < 360 ? '16px' : '20px';
         const backBtn = this.add.text(10, 10, '⬅️ 뒤로 가기', {
             fontSize: backBtnFontSize,
             fontFamily: 'Arial', color: '#FFFFFF',
@@ -152,19 +150,68 @@ export default class GameScene extends Phaser.Scene {
         this.input.on('pointerdown', (pointer) => {
             const now = this.time.now;
             if (this.gameState === 'CATCH') {
-                // CATCH 페이즈: 50ms 미니 디바운스 (다중 터치 오류 방지하되 연타 허용)
                 if (now - this.lastActionTime < 50) return;
             } else {
-                // 기타 페이즈: 200ms 디바운싱
                 if (now - this.lastActionTime < 200) return;
             }
             this.lastActionTime = now;
-
             this.handlePointerDown(pointer);
         });
 
         console.log("GameScene Initialized with Core Loops");
     }
+
+    getCharacterTextureKey() {
+        const rodPower = window.gameManagers.playerModel.stats.rodPower;
+        const charLevels = [1, 4, 7, 10, 13, 16, 19];
+        // 현재 rodPower보다 작거나 같은 가장 큰 레벨 찾기
+        let targetLv = 1;
+        for (let i = charLevels.length - 1; i >= 0; i--) {
+            if (rodPower >= charLevels[i]) {
+                targetLv = charLevels[i];
+                break;
+            }
+        }
+        return `char_lv${targetLv}`;
+    }
+
+    updateCharacterTexture() {
+        if (this.character) {
+            const newTexture = this.getCharacterTextureKey();
+            this.character.setTexture(newTexture);
+
+            // 시각적 피드백 (반짝임)
+            this.tweens.add({
+                targets: this.character,
+                scale: { from: 1.2, to: 1.0 },
+                duration: 300,
+                ease: 'Bounce.easeOut'
+            });
+
+            // 빛나는 효과 파티클
+            const particles = this.add.particles(0, 0, 'dummy', {
+                x: this.character.x,
+                y: this.character.y - 20,
+                speed: { min: -100, max: 100 },
+                angle: { min: 0, max: 360 },
+                scale: { start: 1, end: 0 },
+                lifespan: 800,
+                blendMode: 'ADD',
+                tint: 0xFFD700
+            });
+
+            // 파티클 텍스처 (하얀 원)
+            const g = this.make.graphics({ x: 0, y: 0, add: false });
+            g.fillStyle(0xffffff);
+            g.fillCircle(4, 4, 4);
+            g.generateTexture('charUpgradeParticle', 8, 8);
+            particles.setTexture('charUpgradeParticle');
+
+            particles.explode(20);
+            this.time.delayedCall(1000, () => particles.destroy());
+        }
+    }
+
 
     createWanderingFishes() {
         this.wanderingFishes = [];
@@ -577,21 +624,73 @@ export default class GameScene extends Phaser.Scene {
         // 물고기 종류에 따른 기본 보상
         const baseGold = this.currentFish.baseReward;
 
-        // 도감(PlayerModel)에 추가
-        window.gameManagers.playerModel.addFish(this.currentFish.id);
+        // 도감(PlayerModel)에 추가 (특별 아이템은 제외)
+        if (!this.currentFish.isSpecialItem) {
+            window.gameManagers.playerModel.addFish(this.currentFish.id);
+        }
 
         // 2초 후 폭죽 파티클 제거 및 퀴즈 연동
         this.time.delayedCall(2000, async () => {
             particles.destroy();
 
-            // 50% 확률 수학 퀴즈 팝업 (UIManager 연동)
-            const isQuizCorrect = await window.gameManagers.uiManager.showMathQuiz();
-
             let finalGold = baseGold;
-            if (isQuizCorrect) {
-                // 정답 시 10% 추가 보상
-                finalGold += Math.floor(baseGold * 0.1);
-                this.cameras.main.flash(300, 255, 215, 0); // 황금색 플래시 보너스 피드백
+
+            if (this.currentFish.isSpecialItem) {
+                // 특별 아이템은 퀴즈를 진행하지 않고 즉시 보상 혹은 텍스트 판정
+                if (this.currentFish.id === 'item_treasure') {
+                    this.uiElements.instruction.setText('대박! 황금 보물상자를 낚았습니다!');
+                    this.cameras.main.flash(500, 255, 215, 0);
+                    window.gameManagers.soundManager.playSuccess();
+                } else if (this.currentFish.id === 'item_shoe') {
+                    const shoeMessages = [
+                        '에구... 누군가 버린 낡은 신발이네요.',
+                        '아이고~ 물고기인 줄 알았는데 낡은 장화였네요!',
+                        '구멍 난 신발이 올라왔어요. 발 냄새가 나는 것 같아요!',
+                        '낚싯줄에 웬 신발이? 바다에 쓰레기를 버리면 안 돼요!',
+                        '앗! 짝 잃은 신발이네요. 나머지 한 짝은 어디 있을까요?'
+                    ];
+                    const randomMsg = shoeMessages[Math.floor(Math.random() * shoeMessages.length)];
+                    this.uiElements.instruction.setText(randomMsg);
+                } else if (this.currentFish.id === 'item_trash') {
+                    const trashMessages = [
+                        '앗... 빈 깡통을 낚았습니다. 바다를 깨끗하게!',
+                        '찌글찌글한 고철 덩어리가 올라왔어요. 지구가 아파해요!',
+                        '물고기 대신 쓰레기가... 바다를 더 아껴줘야겠어요.',
+                        '이런! 바닷속에 쓰레기가 너무 많나 봐요.',
+                        '어머나, 빈 병이 올라왔네요. 분리수거를 잘해야겠어요!'
+                    ];
+                    const randomMsg = trashMessages[Math.floor(Math.random() * trashMessages.length)];
+                    this.uiElements.instruction.setText(randomMsg);
+                }
+            } else {
+                // 50% 확률 수학 퀴즈 팝업 (UIManager 연동)
+                const quizResult = await window.gameManagers.uiManager.showMathQuiz();
+                let showTypingQuiz = false;
+
+                if (quizResult === true) {
+                    // 정답 시 20% 추가 보상
+                    finalGold += Math.floor(baseGold * 0.2);
+                    this.cameras.main.flash(300, 255, 215, 0); // 황금색 플래시 보너스 피드백
+
+                    // 수학 퀴즈 맞춘 후 25% 확률로 타이핑 퀴즈
+                    if (Math.random() < 0.25) {
+                        showTypingQuiz = true;
+                    }
+                } else if (quizResult === false) {
+                    // 오답 시 50% 삭감
+                    finalGold = Math.floor(baseGold * 0.5);
+                    this.cameras.main.shake(300, 0.02); // 오답 피드백 흔들림
+                }
+
+                // 타이핑 퀴즈 실행 (수학 퀴즈 정답 시 25% 확률)
+                if (showTypingQuiz) {
+                    const typingResult = await window.gameManagers.uiManager.showTypingQuiz();
+                    if (typingResult) {
+                        // 타이핑 퀴즈 정답 시 추가 20% 상향
+                        finalGold += Math.floor(baseGold * 0.2);
+                        this.cameras.main.flash(300, 255, 20, 147); // 핑크색 플래시 보너스 피드백
+                    }
+                }
             }
 
             // --- Rod Luck 보너스 코인 주머니 ---
@@ -652,7 +751,7 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
-    failFishing(msg) {
+    failFishing(msg = '물고기가 도망갔어요...') {
         this.gameState = 'IDLE';
         this.tweens.killTweensOf(this.uiElements.exclamation);
         this.tweens.killTweensOf(this.lure);
@@ -660,24 +759,43 @@ export default class GameScene extends Phaser.Scene {
         this.lure.setVisible(false);
         this.fish.setVisible(false);
         this.lineTension = 0;
-        // 접근 물고기들 정리
         this.clearApproachFishes();
 
-        // 피버 타임 도중 실패하더라도 해제
         if (this.isFeverTime) this.endFeverTime();
-
-        // 연속 실패 카운트 증가
         this.consecutiveFails++;
+
+        // 지역별 랜덤 실패 메시지 생성
+        let finalMsg = msg;
+        const randomChance = Math.random();
+
+        // 약 40% 확률로 특수 메시지 출력 (기존 메시지가 있을 경우)
+        if (randomChance < 0.4) {
+            if (this.region === 1) {
+                const freshMessages = [
+                    '어라 오리가 잡아간건가?',
+                    '똥새가 내걸 낚아챘어!',
+                    '놓치고 주변을 둘러보니 새매가 옆에 있었다.',
+                    '아 빵먹고싶다'
+                ];
+                finalMsg = freshMessages[Math.floor(Math.random() * freshMessages.length)];
+            } else {
+                const seaMessages = [
+                    '아! 놓치고 보니 범고래였어!!',
+                    '뭐지? 놓친 물고기가 아빠처럼 생긴 고기였어!!'
+                ];
+                finalMsg = seaMessages[Math.floor(Math.random() * seaMessages.length)];
+            }
+        }
 
         // 연속 실패 UI 피드백
         if (this.consecutiveFails >= 2) {
             const warnText = this.consecutiveFails >= 3
                 ? '🔥 다음 낚시는 피버타임!'
                 : `연속 실패 ${this.consecutiveFails}회...`;
-            msg += `\n${warnText}`;
+            finalMsg += `\n${warnText}`;
         }
 
-        this.uiElements.instruction.setText(msg);
+        this.uiElements.instruction.setText(finalMsg);
         this.cameras.main.shake(200, 0.01);
         window.gameManagers.soundManager.playFail();
 
