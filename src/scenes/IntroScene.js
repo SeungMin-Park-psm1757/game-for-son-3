@@ -79,7 +79,7 @@ export default class IntroScene extends Phaser.Scene {
 
         // --- 초기화 버튼 (좌측 하단) ---
         const resetBtnSize = width < 360 ? '14px' : '18px';
-        const resetBtn = this.add.text(20, height - 30, '⚠️ 초기화', {
+        const resetBtn = this.add.text(20, height - 60, '⚠️ 데이터 초기화', {
             fontSize: resetBtnSize,
             fontFamily: 'Arial',
             color: '#FFCCCC',

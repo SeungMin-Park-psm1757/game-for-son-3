@@ -450,6 +450,9 @@ body {
     gap: 15px;
     overflow-y: auto;
     padding-right: 10px;
+    /* 모바일 스크롤 지원 */
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
 }
 
 .upgrade-item {
@@ -528,6 +531,9 @@ body {
     gap: 20px;
     overflow-y: auto;
     padding: 10px;
+    /* 모바일 스크롤 지원 */
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
 }
 
 .fish-card {

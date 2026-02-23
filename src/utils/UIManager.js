@@ -280,18 +280,18 @@ export default class UIManager {
             }
         };
 
-        // 콧수염 낚시꾼 NPC 대사 10가지
+        // 한국 어부 아저씨 NPC 대사 10가지
         const npcQuotes = [
-            "맘마미아! 이 낚싯대라면 고래도 잡겠어!",
-            "에이~ 100 골드면 파스타 한 접시 값이지!",
-            "내 핏줄엔 토마토 소스가 흐르지... 낚싯줄엔 행운을 달아주마!",
-            "가바굴! 자네 눈빛이 진정한 낚시꾼이야!",
-            "우리 할아버지는 수염으로 물고기를 낚았다네!",
-            "아이고~ 이 릴은 내 콧수염만큼 튼튼하다고!",
-            "벨라! 돈 좀 쓰라구~ 돈은 돌고 돌아 물고기가 되는 거야!",
-            "마마미아~ 자네가 오면 내 가게가 환해져!",
-            "이 미끼에는 비밀 소스가 발라져 있다구... 절대 핥지 마!",
-            "에이~ 전설에 따르면, 정우는 바다의 왕이 된다는데?"
+            "오늘 물때가 아주 기가 막혀~ 대물 한 마리 낚아보겠나?",
+            "어이구, 우리 정우 왔구나! 낚시 도구 좀 손봐줄까?",
+            "바다 사나이는 낚싯대 하나로 말하는 법이지!",
+            "허허, 그놈 참... 낚시꾼 눈빛이 예사롭지 않은걸?",
+            "이봐, 이 릴은 내가 젊었을 때 고래도 잡던 거야!",
+            "미끼가 좋아야 큰 놈이 무는 법이지. 좀 둘러보게나.",
+            "낚시는 기다림의 미학이라네... 하지만 장비가 좋으면 덜 기다려도 되지!",
+            "왔구나 정우야! 오늘은 어떤 바다로 나갈 겐가?",
+            "허허, 자네 실력이 날로 느는구먼. 뿌듯하구먼!",
+            "바다가 주는 선물은 소중히 다뤄야 한다네. 알겠지?"
         ];
         const randomQuote = npcQuotes[Math.floor(Math.random() * npcQuotes.length)];
 
@@ -328,7 +328,7 @@ export default class UIManager {
                 
                 <div class="shop-content">
                     <div class="shop-npc">
-                        <div class="npc-avatar">🥸</div>
+                        <div class="npc-avatar">👴</div>
                         <div class="npc-bubble">"${randomQuote}"</div>
                     </div>
                     
@@ -392,9 +392,9 @@ export default class UIManager {
                 if (success) {
                     window.gameManagers.soundManager.playCoin();
                     const successQuotes = [
-                        '"벨라! 탁월한 선택이다!"',
-                        '"오~ 자네 센스 있군!"',
-                        '"마마미아! 내 콧수염이 감동했어!"'
+                        '"허허, 아주 좋은 선택이야!"',
+                        '"그렇지, 장비에 투자할 줄 알아야 진짜 강태공이지!"',
+                        '"자네라면 이 도구를 잘 써줄 줄 알았네!"'
                     ];
                     bubble.innerText = successQuotes[Math.floor(Math.random() * successQuotes.length)];
                     bubble.classList.add('quiz-shake');
