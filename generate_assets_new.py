@@ -14,8 +14,8 @@ def create_topdown_background(filename):
             if (x - y) % 160 == 0:
                 draw.rectangle([x, y, x + 30, y + 5], fill=(20, 120, 230, 80))
 
-    # 하단 15% 영역에 캐릭터가 서 있을 나무 데크 (Dock) 생성
-    dock_height = int(height * 0.15)
+    # 하단 25% 영역에 캐릭터가 서 있을 나무 데크 (Dock) 생성
+    dock_height = int(height * 0.25)
     dock_y = height - dock_height
     draw.rectangle([0, dock_y, width, height], fill=(139, 69, 19, 255)) # 갈색 나무
 

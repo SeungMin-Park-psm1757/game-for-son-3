@@ -135,6 +135,12 @@ body {
     .shop-content {
         flex-direction: column !important;
         gap: 10px;
+        min-height: 0;
+    }
+
+    .upgrade-list {
+        min-height: 0;
+        overflow-y: auto;
     }
 
     #shop-popup {
