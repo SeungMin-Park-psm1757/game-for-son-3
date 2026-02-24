@@ -795,7 +795,12 @@ export default class GameScene extends Phaser.Scene {
             finalMsg += `\n${warnText}`;
         }
 
-        this.uiElements.instruction.setText(finalMsg);
+        if (window.gameManagers && window.gameManagers.uiManager) {
+            window.gameManagers.uiManager.showFailModal(finalMsg);
+        } else {
+            this.uiElements.instruction.setText(finalMsg);
+        }
+
         this.cameras.main.shake(200, 0.01);
         window.gameManagers.soundManager.playFail();
 

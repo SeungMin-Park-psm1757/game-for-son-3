@@ -29,16 +29,27 @@ export default class IntroScene extends Phaser.Scene {
         this.bg.setDisplaySize(width, height);
         this.bg.setTint(0x777777); // 인트로 화면은 조금 어둡게
 
-        const titleFontSize = Math.max(32, Math.round(width * 0.089)) + 'px';
-        this.add.text(width / 2, height * 0.2, '정우의 낚시 대모험!', {
+        const titleFontSize = Math.max(40, Math.round(width * 0.11)) + 'px';
+        const titleText = this.add.text(width / 2, height * 0.2, '정우의 낚시 대모험!', {
             fontSize: titleFontSize,
-            fontFamily: 'Arial',
-            color: '#FFD700',
-            stroke: '#000000',
-            strokeThickness: 8,
-            shadow: { offsetX: 4, offsetY: 4, color: '#000', blur: 4, stroke: true, fill: true },
+            fontFamily: 'Arial', // Fallback, we can use bold
+            fontStyle: 'bold',
+            color: '#FFFFFF',
+            stroke: '#0055FF',
+            strokeThickness: 12,
+            shadow: { offsetX: 6, offsetY: 6, color: '#002277', blur: 0, stroke: true, fill: true },
             wordWrap: { width: width * 0.95 }
         }).setOrigin(0.5);
+
+        // Add a gentle floating animation to the title
+        this.tweens.add({
+            targets: titleText,
+            y: titleText.y - 10,
+            duration: 1500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
 
         const subFontSize = Math.max(18, Math.round(width * 0.044)) + 'px';
         this.add.text(width / 2, height * 0.33, '낚시할 지역을 선택하세요', {

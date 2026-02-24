@@ -351,31 +351,35 @@ body {
 /* --- 상점 팝업 전용 스타일 --- */
 #shop-popup {
     width: min(800px, 95vw);
-    max-height: 90vh;
+    max-height: 95vh;
     display: flex;
     flex-direction: column;
+    padding: 15px;
+    /* Reduced from 30px */
 }
 
 .shop-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
+    /* Reduced */
     padding-bottom: 5px;
-    border-bottom: 3px dashed #CCC;
+    border-bottom: 2px dashed #CCC;
     flex-wrap: wrap;
-    /* allow wrapping on small screens */
     gap: 5px;
 }
 
 .shop-header h2 {
     color: #4169E1;
-    font-size: 28px;
+    font-size: 20px;
+    /* Reduced from 28px */
     margin: 0;
 }
 
 .shop-gold {
-    font-size: 20px;
+    font-size: 16px;
+    /* Reduced */
     font-weight: bold;
     color: #DAA520;
 }
@@ -384,9 +388,9 @@ body {
     background: #FF6347;
     color: white;
     border: none;
-    padding: 8px 15px;
+    padding: 5px 10px;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
 }
@@ -402,36 +406,37 @@ body {
 /* NPC 영역 (상단) */
 .shop-npc {
     background: #F0F8FF;
-    border: 3px solid #87CEFA;
+    border: 2px solid #87CEFA;
     border-radius: 10px;
-    padding: 10px;
+    padding: 5px 10px;
+    /* Reduced padding */
     display: flex;
     flex-direction: row;
-    /* 가로 배치로 변경해서 공간 절약 */
     align-items: center;
     justify-content: center;
-    gap: 15px;
+    gap: 10px;
+    /* Reduced gap */
     flex-shrink: 0;
-    /* 크기 줄어들지 않도록 */
 }
 
 .npc-avatar {
-    font-size: 50px;
-    /* 기존 100px에서 대폭 축소 */
+    font-size: 32px;
+    /* Halved from ~60px equivalent */
     margin-bottom: 0;
     animation: float 3s ease-in-out infinite;
 }
 
 .npc-bubble {
     background: white;
-    border: 3px solid #333;
-    border-radius: 15px;
-    padding: 10px 15px;
-    font-size: 16px;
-    /* 기존 22px에서 축소 */
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 5px 10px;
+    /* Reduced padding */
+    font-size: 14px;
+    /* Reduced font */
     font-weight: bold;
     position: relative;
-    max-width: 75%;
+    max-width: 80%;
 }
 
 /* 말풍선 꼬리 (왼쪽으로 변경) */
@@ -439,9 +444,9 @@ body {
     content: '';
     position: absolute;
     top: 50%;
-    left: -15px;
-    margin-top: -10px;
-    border-width: 10px;
+    left: -10px;
+    margin-top: -6px;
+    border-width: 6px;
     border-style: solid;
     border-color: transparent #333 transparent transparent;
 }
@@ -463,10 +468,10 @@ body {
     flex: 2;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 8px;
+    /* Reduced gap */
     overflow-y: auto;
-    padding-right: 10px;
-    /* 모바일 스크롤 지원 */
+    padding-right: 5px;
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
 }
@@ -475,9 +480,10 @@ body {
     display: flex;
     align-items: center;
     background: #FFF8DC;
-    border: 3px solid #DEB887;
-    border-radius: 10px;
-    padding: 10px;
+    border: 2px solid #DEB887;
+    border-radius: 8px;
+    padding: 6px 10px;
+    /* Reduced padding */
     text-align: left;
 }
 

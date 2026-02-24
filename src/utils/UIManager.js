@@ -195,6 +195,40 @@ export default class UIManager {
         this.renderPersistentUI();
     }
 
+    // --- 낚시 실패 모달 (Phase 6 팝업) ---
+    showFailModal(message) {
+        if (this.isQuizActive || this.currentPopup) return;
+        this.hidePersistentUI();
+        this.container.style.pointerEvents = 'auto';
+
+        const popupHTML = `
+            <div id="fail-popup" class="popup-box quiz-shake" style="border-color: #DC143C; width: min(400px, 90vw);">
+                <h2 style="color: #DC143C; font-size: 28px; margin-bottom: 20px;">💦 앗, 아깝다! 💦</h2>
+                <div style="font-size: 80px; margin-bottom: 15px; animation: float 3s ease-in-out infinite;">🎣💨</div>
+                <p style="font-size: 20px; font-weight: bold; color: #333; margin-bottom: 25px; word-break: keep-all;">${message}</p>
+                <button id="fail-close-btn" class="choice-btn" style="background-color: #333; box-shadow: 0 5px 0 #000; font-size: 20px; padding: 10px 30px;">확인</button>
+            </div>
+        `;
+
+        this.container.innerHTML = popupHTML;
+        this.currentPopup = document.getElementById('fail-popup');
+
+        const closeBtn = document.getElementById('fail-close-btn');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                window.gameManagers.soundManager.playCoin(); // click sound
+                this.closePopup();
+            };
+        }
+
+        // Auto close for fast gameplay flow
+        setTimeout(() => {
+            if (this.currentPopup && this.currentPopup.id === 'fail-popup') {
+                this.closePopup();
+            }
+        }, 2500);
+    }
+
     // --- 상시 UI ---
     initPersistentUI() {
         this.persistentContainer = document.createElement('div');

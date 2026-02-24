@@ -60,27 +60,29 @@ def process_character_sprite(input_path):
         draw = ImageDraw.Draw(char_img)
 
         # Draw the fishing rod ON TOP of the character image
-        rod_length = min(30 + lv, 50)
-        start_x, start_y = 46, 37  # Approximate hand position on 64x64
-        end_x = start_x + 10
+        # Making the rod much larger and more prominent so the user can easily see it changes!
+        rod_length = min(40 + lv, 60)
+        start_x, start_y = 52, 42  # Pushed to the right and lower so the rod extends upwards
+        end_x = start_x - 30       # Angle it diagonally leftwards, across the body
         end_y = start_y - rod_length
         
         # Glow
         if glow_col:
-            draw.line([start_x, start_y, end_x, end_y], fill=glow_col, width=rod_thick+4)
+            draw.line([start_x, start_y, end_x, end_y], fill=glow_col, width=rod_thick+6)
             if lv >= 19:
-                 draw.ellipse([end_x-8, end_y-8, end_x+8, end_y+8], fill=glow_col)
+                 draw.ellipse([end_x-12, end_y-12, end_x+12, end_y+12], fill=glow_col)
 
         # Rod Body
-        draw.line([start_x, start_y, end_x, end_y], fill=rod_col, width=rod_thick)
+        # Make base rod thicker to be visible on 64x64
+        draw.line([start_x, start_y, end_x, end_y], fill=rod_col, width=rod_thick+2)
 
         # Deco
         if deco_col:
-            draw.ellipse([start_x+3, start_y-15, start_x+7, start_y-11], fill=deco_col)
+            draw.ellipse([start_x-5, start_y-15, start_x+1, start_y-9], fill=deco_col)
             if lv >= 16:
-                draw.polygon([(end_x-4, end_y), (end_x, end_y-6), (end_x+4, end_y), (end_x, end_y+4)], fill=deco_col)
+                draw.polygon([(end_x-6, end_y), (end_x, end_y-8), (end_x+6, end_y), (end_x, end_y+6)], fill=deco_col)
             else:
-                draw.ellipse([end_x-2, end_y-2, end_x+2, end_y+2], fill=deco_col)
+                draw.ellipse([end_x-4, end_y-4, end_x+4, end_y+4], fill=deco_col)
 
         out_path = os.path.join('assets', 'images', f'char_lv{lv}.png')
         char_img.save(out_path)
@@ -88,7 +90,7 @@ def process_character_sprite(input_path):
 
 if __name__ == '__main__':
     dad_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_dad_1771967403307.png'
-    mom_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_mom_1771967417888.png'
+    mom_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_mom_black_1771969233618.png'
     jeongwoo_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_jeongwoo_1771967438083.png'
     seyeon_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_seyeon_1771967458136.png'
     char_base_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\char_base_jeongwoo_1771967474428.png'
