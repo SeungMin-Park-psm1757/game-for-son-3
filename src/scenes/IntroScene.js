@@ -18,7 +18,7 @@ export default class IntroScene extends Phaser.Scene {
 
         // 배경음악 재생 (글로벌하게 한 번만)
         if (!this.sound.get('bgm')) {
-            const bgm = this.sound.add('bgm', { loop: true, volume: 0.15 });
+            const bgm = this.sound.add('bgm', { loop: true, volume: 0.45 });
             bgm.play();
         } else if (!this.sound.get('bgm').isPlaying) {
             this.sound.get('bgm').play();
