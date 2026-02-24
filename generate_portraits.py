@@ -37,8 +37,8 @@ def create_portrait(filename, char_type):
         
     elif char_type == 'mom':
         # --- 엄마 (젊은 모습) ---
-        # Body (Yellow blouse)
-        draw.rounded_rectangle([30, 110, 130, 160], radius=20, fill=(255, 215, 0, 255))
+        # Body (Black blouse/shirt)
+        draw.rounded_rectangle([30, 110, 130, 160], radius=20, fill=(30, 30, 30, 255))
         
         # Back Hair (Long brown)
         draw.ellipse([30, 30, 130, 140], fill=(101, 67, 33, 255))
