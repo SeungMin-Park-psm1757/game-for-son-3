@@ -43,18 +43,18 @@ def process_character_sprite(input_path):
     img_base.putdata(new_data)
     img_base = img_base.resize((64, 64), Image.LANCZOS)
 
-    # 낚싯대 정의 (기존 generate_lure.py 참조)
-    levels = [
-        (1, (139, 69, 19, 255), 2, None, None),           # 기본 나무
-        (4, (101, 67, 33, 255), 3, None, None),           # 단단한 나무
-        (7, (192, 192, 192, 255), 3, (169, 169, 169, 255), None), # 은빛 (철)
-        (10, (255, 215, 0, 255), 3, (218, 165, 32, 255), None),   # 황금
-        (13, (64, 224, 208, 255), 3, (0, 255, 255, 255), (0, 206, 209, 100)), # 터콰이즈 (약간 빛)
-        (16, (30, 144, 255, 255), 4, (0, 191, 255, 255), (135, 206, 250, 150)),# 크리스탈 블루
-        (19, (255, 20, 147, 255), 4, (255, 0, 255, 255), (218, 112, 214, 200)) # 핑크/보라 궁극
-    ]
+    def get_rod_config(lv):
+        if lv >= 19: return (255, 20, 147, 255), 4, (255, 0, 255, 255), (218, 112, 214, 200) # 핑크/보라 궁극
+        if lv >= 16: return (30, 144, 255, 255), 4, (0, 191, 255, 255), (135, 206, 250, 150)# 크리스탈 블루
+        if lv >= 13: return (64, 224, 208, 255), 3, (0, 255, 255, 255), (0, 206, 209, 100) # 터콰이즈
+        if lv >= 10: return (255, 215, 0, 255), 3, (218, 165, 32, 255), None   # 황금
+        if lv >= 7: return (192, 192, 192, 255), 3, (169, 169, 169, 255), None # 은빛 (철)
+        if lv >= 4: return (101, 67, 33, 255), 3, None, None           # 단단한 나무
+        return (139, 69, 19, 255), 2, None, None           # 기본 나무
 
-    for lv, rod_col, rod_thick, deco_col, glow_col in levels:
+    for lv in range(1, 21):
+        rod_col, rod_thick, deco_col, glow_col = get_rod_config(lv)
+        
         # Create a new image by copying the base
         char_img = img_base.copy()
         draw = ImageDraw.Draw(char_img)

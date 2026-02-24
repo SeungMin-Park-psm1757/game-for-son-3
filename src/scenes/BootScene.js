@@ -12,11 +12,10 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('bg_sea', 'assets/images/bg_sea.png');
         this.load.image('lure', 'assets/images/lure.png');
 
-        // 캐릭터 성장 스프라이트 변형 (Rod Power 레벨에 따라)
-        const charLevels = [1, 4, 7, 10, 13, 16, 19];
-        charLevels.forEach(lv => {
+        // 캐릭터 성장 스프라이트 변형 (Rod Power 1~20 레벨 전체 렌더링)
+        for (let lv = 1; lv <= 20; lv++) {
             this.load.image(`char_lv${lv}`, `assets/images/char_lv${lv}.png`);
-        });
+        }
 
         // 민물 (Region 1 - 8마리)
         this.load.image('fish_pirami', 'assets/images/fish_pirami.png');

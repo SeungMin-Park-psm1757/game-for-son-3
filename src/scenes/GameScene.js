@@ -97,7 +97,7 @@ export default class GameScene extends Phaser.Scene {
         else charY = height * 0.7;
 
         const charTexture = this.getCharacterTextureKey();
-        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3);
+        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(1.3);
 
         this.fishingLine = this.add.graphics();
         this.fishingLine.setDepth(1); // 찌(2) 아래, 물고기(1)와 동일선상 (물 위)
@@ -163,16 +163,7 @@ export default class GameScene extends Phaser.Scene {
 
     getCharacterTextureKey() {
         const rodPower = window.gameManagers.playerModel.stats.rodPower;
-        const charLevels = [1, 4, 7, 10, 13, 16, 19];
-        // 현재 rodPower보다 작거나 같은 가장 큰 레벨 찾기
-        let targetLv = 1;
-        for (let i = charLevels.length - 1; i >= 0; i--) {
-            if (rodPower >= charLevels[i]) {
-                targetLv = charLevels[i];
-                break;
-            }
-        }
-        return `char_lv${targetLv}`;
+        return `char_lv${rodPower}`;
     }
 
     updateCharacterTexture() {
@@ -180,10 +171,10 @@ export default class GameScene extends Phaser.Scene {
             const newTexture = this.getCharacterTextureKey();
             this.character.setTexture(newTexture);
 
-            // 시각적 피드백 (반짝임)
+            // 시각적 피드백 (반짝임) - 크기가 1.3배이므로 맞춰서 수정
             this.tweens.add({
                 targets: this.character,
-                scale: { from: 1.2, to: 1.0 },
+                scale: { from: 1.5, to: 1.3 },
                 duration: 300,
                 ease: 'Bounce.easeOut'
             });
