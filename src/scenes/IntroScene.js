@@ -77,16 +77,39 @@ export default class IntroScene extends Phaser.Scene {
             const nextNames = { 1: '연안', 2: '먼 바다', 3: '엔딩' };
             const nextName = nextNames[pm.currentChapter] || '';
             const percent = Math.min(100, Math.floor((pm.gold / goal) * 100));
-            this.add.text(width / 2, height * 0.90, `🎯 ${nextName} 해금: ${pm.gold} / ${goal} G (${percent}%)`, {
+            this.add.text(width / 2, height * 0.86, `🎯 ${nextName} 해금: ${pm.gold} / ${goal} G (${percent}%)`, {
                 fontSize: goalFontSize, fontFamily: 'Arial', color: '#FFD700',
                 stroke: '#000', strokeThickness: 3
             }).setOrigin(0.5);
         } else {
-            this.add.text(width / 2, height * 0.90, '🎉 모든 챕터 클리어! 상점에서 엔딩 아이템을 확인하세요!', {
+            this.add.text(width / 2, height * 0.86, '🎉 모든 챕터 클리어! 상점에서 엔딩 아이템을 확인하세요!', {
                 fontSize: goalFontSize, fontFamily: 'Arial', color: '#FFD700',
                 stroke: '#000', strokeThickness: 3
             }).setOrigin(0.5);
         }
+
+        // --- 물고기 기록 (마일스톤) 버튼 (중앙 하단) ---
+        const milestoneBtnSize = width < 360 ? '16px' : '20px';
+        const milestoneBtn = this.add.text(width / 2, height * 0.94, '🐟 잡은 물고기 기록 보기', {
+            fontSize: milestoneBtnSize,
+            fontFamily: 'Arial',
+            color: '#FFFFFF',
+            backgroundColor: '#FF8C00',
+            padding: { x: 15, y: 8 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        milestoneBtn.on('pointerdown', () => {
+            window.gameManagers.uiManager.openFishMilestonePopup(this);
+        });
+
+        // 펄스 애니메이션 추가
+        this.tweens.add({
+            targets: milestoneBtn,
+            scale: { from: 1, to: 1.05 },
+            duration: 800,
+            yoyo: true,
+            repeat: -1
+        });
 
         // --- 초기화 버튼 (좌측 하단) ---
         const resetBtnSize = width < 360 ? '14px' : '18px';

@@ -547,4 +547,78 @@ export default class UIManager {
         this.currentPopup = document.getElementById('encyclopedia-popup');
         document.getElementById('book-close-btn').onclick = () => { this.closePopup(); };
     }
+
+    openFishMilestonePopup(currentScene) {
+        if (this.isQuizActive) return;
+        this.hidePersistentUI();
+        this.container.style.pointerEvents = 'auto';
+
+        const collection = this.playerModel.fishCollection;
+        const milestones = this.playerModel.fishMilestonesSeen || {};
+
+        let fishCardsHTML = '';
+        FISH_TYPES.forEach(fish => {
+            const count = collection[fish.id] || 0;
+            const isDiscovered = count > 0;
+
+            // 칭호 결정
+            let titleText = '없음';
+            let titleClass = '';
+
+            if (milestones[fish.id]) {
+                if (milestones[fish.id][50]) {
+                    titleText = '대마왕 👑';
+                    titleClass = 'title-ssr';
+                } else if (milestones[fish.id][20]) {
+                    titleText = '왕 👑';
+                    titleClass = 'title-sr';
+                } else if (milestones[fish.id][10]) {
+                    titleText = '왕자 👑';
+                    titleClass = 'title-r';
+                }
+            }
+
+            if (isDiscovered) {
+                fishCardsHTML += `
+                    <div class="fish-card discovered" style="border-color: ${titleText !== '없음' ? '#FFD700' : '#DEB887'};">
+                        <img src="assets/images/${fish.id}.png" class="fish-img-sprite" style="transform: scale(${Math.min(1.2, fish.scale)});" />
+                        <h3>${fish.name}</h3>
+                        <p class="fish-count">총 <strong>${count}</strong>마리</p>
+                        <p class="fish-title ${titleClass}">칭호: ${titleText}</p>
+                    </div>
+                `;
+            } else {
+                fishCardsHTML += `
+                    <div class="fish-card undiscovered">
+                        <img src="assets/images/${fish.id}.png" class="fish-img-sprite silhouette-img" style="transform: scale(${Math.min(1.2, fish.scale)});" />
+                        <h3>???</h3>
+                        <p class="fish-count">0마리</p>
+                        <p class="fish-title">칭호: 없음</p>
+                    </div>
+                `;
+            }
+        });
+
+        const popupHTML = `
+            <div id="encyclopedia-popup" class="popup-box">
+                <div class="shop-header" style="flex-direction: column; align-items: center;">
+                    <h2>🏆 잡은 물고기 기록 🏆</h2>
+                    <p style="margin: 5px 0; color: #666; font-size: 14px;">10마리: 왕자 / 20마리: 왕 / 50마리: 대마왕</p>
+                    <button id="book-close-btn" style="align-self: flex-end; margin-top: -40px;">❌ 닫기</button>
+                </div>
+                <div class="encyclopedia-grid">
+                    ${fishCardsHTML}
+                </div>
+            </div>
+        `;
+
+        this.container.innerHTML = popupHTML;
+        this.currentPopup = document.getElementById('encyclopedia-popup');
+
+        // 닫기 버튼 이벤트
+        document.getElementById('book-close-btn').onclick = () => {
+            this.closePopup();
+            // 줌 아웃 등의 효과를 다시 주고 싶다면 IntroScene과 상호작용 가능
+        };
+    }
 }

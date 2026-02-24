@@ -13,6 +13,8 @@ export default class PlayerModel {
             this.currentChapter = savedData.currentChapter || 1;
             this.highestChapter = savedData.highestChapter || 1;
             this.hasSeenFirstStory = savedData.hasSeenFirstStory || false;
+            this.hasSeenMidChapterEvent = savedData.hasSeenMidChapterEvent || {};
+            this.fishMilestonesSeen = savedData.fishMilestonesSeen || {};
         } else {
             this.gold = 0;
             this.stats = {
@@ -25,6 +27,8 @@ export default class PlayerModel {
             this.currentChapter = 1;
             this.highestChapter = 1;
             this.hasSeenFirstStory = false;
+            this.hasSeenMidChapterEvent = {};
+            this.fishMilestonesSeen = {};
         }
         this.listeners = [];
 
@@ -51,7 +55,9 @@ export default class PlayerModel {
             fishCollection: this.fishCollection,
             currentChapter: this.currentChapter,
             highestChapter: this.highestChapter,
-            hasSeenFirstStory: this.hasSeenFirstStory
+            hasSeenFirstStory: this.hasSeenFirstStory,
+            hasSeenMidChapterEvent: this.hasSeenMidChapterEvent,
+            fishMilestonesSeen: this.fishMilestonesSeen
         });
     }
 

@@ -615,9 +615,53 @@ export default class GameScene extends Phaser.Scene {
         // 물고기 종류에 따른 기본 보상
         const baseGold = this.currentFish.baseReward;
 
-        // 도감(PlayerModel)에 추가 (특별 아이템은 제외)
+        let milestoneStoryData = null; // 마일스톤 달성 시 재생할 스토리 데이터
+
+        // 도감(PlayerModel)에 추가 및 마일스톤(10, 20, 50마리) 체크 (특별 아이템은 제외)
         if (!this.currentFish.isSpecialItem) {
             window.gameManagers.playerModel.addFish(this.currentFish.id);
+
+            const count = window.gameManagers.playerModel.fishCollection[this.currentFish.id];
+            const fishId = this.currentFish.id;
+            const fishName = this.currentFish.name;
+            const model = window.gameManagers.playerModel;
+
+            if (!model.fishMilestonesSeen[fishId]) {
+                model.fishMilestonesSeen[fishId] = {};
+            }
+
+            let title = '';
+            if (count === 10 && !model.fishMilestonesSeen[fishId][10]) {
+                title = '왕자';
+                model.fishMilestonesSeen[fishId][10] = true;
+            } else if (count === 20 && !model.fishMilestonesSeen[fishId][20]) {
+                title = '왕';
+                model.fishMilestonesSeen[fishId][20] = true;
+            } else if (count === 50 && !model.fishMilestonesSeen[fishId][50]) {
+                title = '대마왕';
+                model.fishMilestonesSeen[fishId][50] = true;
+            }
+
+            if (title !== '') {
+                model.notify(); // 저장
+                milestoneStoryData = [
+                    { speaker: '상점 할아버지', portrait: null, text: `허허! ${fishName}만 ${count}마리를 낚다니!\n너에게 [ ${fishName} ${title} ] 칭호를 주마!` },
+                    { speaker: '정우', portrait: 'char_jeongwoo', text: `감사합니다! 제가 바로 ${fishName} ${title}입니다!!` }
+                ];
+
+                // 특정 물고기에 대한 재미있는 대사 추가
+                if (fishName === '붕어') {
+                    milestoneStoryData.push({ speaker: '세연', portrait: 'char_seyeon', text: '오빠!! 붕어빵은 왜 안나와?? 붕어빵 먹고 싶어!' });
+                } else if (fishName === '피라미') {
+                    milestoneStoryData.push({ speaker: '아빠', portrait: 'char_dad', text: '정우야, 피라미드랑 피라미는 다른거란다 하하하!' });
+                } else if (fishName === '미꾸라지') {
+                    milestoneStoryData.push({ speaker: '엄마', portrait: 'char_mom', text: '어휴 미끌미끌해라! 오늘 저녁은 추어탕이다!' });
+                } else if (fishName === '고등어') {
+                    milestoneStoryData.push({ speaker: '엄마', portrait: 'char_mom', text: '고갈비 해먹으면 참 맛있겠네~ 구워먹자!' });
+                } else if (fishName === '참돔') {
+                    milestoneStoryData.push({ speaker: '상점 할아버지', portrait: null, text: '그 귀한 참돔을 이리 많이 낚다니... 넌 전설이다 꼬마야!' });
+                }
+            }
         }
 
         // 2초 후 폭죽 파티클 제거 및 퀴즈 연동
@@ -732,13 +776,60 @@ export default class GameScene extends Phaser.Scene {
 
             this.updateGoalText();
 
-            // --- 챕터 진행 체크 ---
+            // --- 챕터 진행 및 중간 이벤트 체크 ---
             const model = window.gameManagers.playerModel;
-            if (model.currentChapter <= 3 && model.checkChapterGoal()) {
-                this.triggerStoryTransition();
-            } else {
-                this.resetFishing();
+            if (model.currentChapter <= 3) {
+                if (model.checkChapterGoal()) {
+                    // 목표 달성 시 챕터 전환
+                    this.triggerStoryTransition();
+                    return;
+                } else {
+                    // 목표액의 50% 달성 시 중간 격려 이벤트 (각 챕터별 1회)
+                    const goal = model.chapterGoals[model.currentChapter];
+                    if (model.gold >= goal / 2 && !model.hasSeenMidChapterEvent[model.currentChapter]) {
+                        model.hasSeenMidChapterEvent[model.currentChapter] = true;
+                        model.notify(); // 저장
+
+                        let midStoryData = [];
+                        if (model.currentChapter === 1) {
+                            midStoryData = [
+                                { speaker: '엄마', portrait: 'char_mom', text: '정우야~ 벌써 목표 금액의 반이나 모았네! 근데 밥은 언제 먹으러 올거니?' },
+                                { speaker: '정우', portrait: 'char_jeongwoo', text: '물고기가 밥인데 무슨 소리세요 엄마! 좀만 더 잡을게요!' }
+                            ];
+                        } else if (model.currentChapter === 2) {
+                            midStoryData = [
+                                { speaker: '상점 할아버지', portrait: null, text: '허허, 꼬마야. 벌써 배 살 돈을 반이나 모았군. 대단혀~' },
+                                { speaker: '정우', portrait: 'char_jeongwoo', text: '할아버지 조금만 기다리세요. 제가 여기 바다 씨를 말려버릴테니까요!' }
+                            ];
+                        } else if (model.currentChapter === 3) {
+                            midStoryData = [
+                                { speaker: '세연', portrait: 'char_seyeon', text: '오빠!! 까까 살 돈 반이나 모아써?!' },
+                                { speaker: '정우', portrait: 'char_jeongwoo', text: '세연아, 원양어선에는 과자 공장이 통째로 실려있단다. 기다려라!!' }
+                            ];
+                        }
+
+                        // 이벤트를 보고 난 후 다시 GameScene으로 돌아오도록 설정
+                        this.scene.start('StoryScene', {
+                            storyData: midStoryData,
+                            nextScene: 'GameScene',
+                            nextSceneData: {}
+                        });
+                        return;
+                    }
+                }
             }
+
+            // --- 마일스톤 달성 스토리(칭호) ---
+            if (milestoneStoryData) {
+                this.scene.start('StoryScene', {
+                    storyData: milestoneStoryData,
+                    nextScene: 'GameScene',
+                    nextSceneData: {}
+                });
+                return;
+            }
+
+            this.resetFishing();
         });
     }
 
