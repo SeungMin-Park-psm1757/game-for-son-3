@@ -1,80 +1,104 @@
 import os
-from PIL import Image
-from rembg import remove
+import sys
+from PIL import Image, ImageDraw
 
-DEST_DIR = r'c:\AI\my DeepL 2\game-for-son-3\assets\images'
+def process_portrait(input_path, output_name):
+    # output_name like 'char_dad.png'
+    output_path = os.path.join('assets', 'images', output_name)
+    print(f"Processing {input_path} -> {output_path}")
+    
+    img = Image.open(input_path).convert("RGBA")
+    
+    # Remove magenta background
+    data = img.getdata()
+    new_data = []
+    # threshold for magenta (255, 0, 255)
+    for item in data:
+        dist = abs(item[0] - 255) + item[1] + abs(item[2] - 255)
+        if dist < 120:  # Allow some variance
+            new_data.append((255, 255, 255, 0))
+        else:
+            new_data.append(item)
+    
+    img.putdata(new_data)
+    
+    # Resize to 160x160 using Lanczos for downsampling high-res AI image
+    img = img.resize((160, 160), Image.LANCZOS)
+    img.save(output_path)
+    print(f"Saved {output_path}")
 
-IMAGES_TO_PROCESS = [
-    {
-        'src': r'C:\Users\QuIC\.gemini\antigravity\brain\b77eeac2-62c5-4cf8-98b9-64f43448a353\fish_ssogari_1771897159776.png',
-        'dest': 'fish_ssogari.png',
-        'size': 128,
-        'pixelate_size': 32
-    },
-    {
-        'src': r'C:\Users\QuIC\.gemini\antigravity\brain\b77eeac2-62c5-4cf8-98b9-64f43448a353\char_dad_1771897189653.png',
-        'dest': 'char_dad.png',
-        'size': 160,
-        'pixelate_size': 40
-    },
-    {
-        'src': r'C:\Users\QuIC\.gemini\antigravity\brain\b77eeac2-62c5-4cf8-98b9-64f43448a353\char_mom_1771897207005.png',
-        'dest': 'char_mom.png',
-        'size': 160,
-        'pixelate_size': 40
-    },
-    {
-        'src': r'C:\Users\QuIC\.gemini\antigravity\brain\b77eeac2-62c5-4cf8-98b9-64f43448a353\char_seyeon_1771897235017.png',
-        'dest': 'char_seyeon.png',
-        'size': 160,
-        'pixelate_size': 40
-    },
-    {
-        'src': r'C:\Users\QuIC\.gemini\antigravity\brain\b77eeac2-62c5-4cf8-98b9-64f43448a353\char_jeongwoo_1771897250255.png',
-        'dest': 'char_jeongwoo.png',
-        'size': 160,
-        'pixelate_size': 40
-    }
-]
+def process_character_sprite(input_path):
+    print(f"Processing character base: {input_path}")
+    img_base = Image.open(input_path).convert("RGBA")
+    
+    data = img_base.getdata()
+    new_data = []
+    for item in data:
+        dist = abs(item[0] - 255) + item[1] + abs(item[2] - 255)
+        if dist < 120:
+            new_data.append((255, 255, 255, 0))
+        else:
+            new_data.append(item)
+    
+    img_base.putdata(new_data)
+    img_base = img_base.resize((64, 64), Image.LANCZOS)
 
-def main():
-    for item in IMAGES_TO_PROCESS:
-        src = item['src']
-        dest = item['dest']
-        size = item['size']
-        px_size = item['pixelate_size']
+    # 낚싯대 정의 (기존 generate_lure.py 참조)
+    levels = [
+        (1, (139, 69, 19, 255), 2, None, None),           # 기본 나무
+        (4, (101, 67, 33, 255), 3, None, None),           # 단단한 나무
+        (7, (192, 192, 192, 255), 3, (169, 169, 169, 255), None), # 은빛 (철)
+        (10, (255, 215, 0, 255), 3, (218, 165, 32, 255), None),   # 황금
+        (13, (64, 224, 208, 255), 3, (0, 255, 255, 255), (0, 206, 209, 100)), # 터콰이즈 (약간 빛)
+        (16, (30, 144, 255, 255), 4, (0, 191, 255, 255), (135, 206, 250, 150)),# 크리스탈 블루
+        (19, (255, 20, 147, 255), 4, (255, 0, 255, 255), (218, 112, 214, 200)) # 핑크/보라 궁극
+    ]
+
+    for lv, rod_col, rod_thick, deco_col, glow_col in levels:
+        # Create a new image by copying the base
+        char_img = img_base.copy()
+        draw = ImageDraw.Draw(char_img)
+
+        # Draw the fishing rod ON TOP of the character image
+        rod_length = min(30 + lv, 50)
+        start_x, start_y = 46, 37  # Approximate hand position on 64x64
+        end_x = start_x + 10
+        end_y = start_y - rod_length
         
-        if not os.path.exists(src):
-            print(f"Skipping {src} - not found.")
-            continue
-            
-        print(f"Processing {dest}...")
-        try:
-            img = Image.open(src).convert("RGBA")
-            
-            # Remove background using rembg
-            img_no_bg = remove(img)
-            
-            # Resize preserving aspect ratio into a bounding box
-            img_no_bg.thumbnail((size, size), Image.Resampling.LANCZOS)
-            
-            # Create transparent canvas and paste centered
-            canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-            x_offset = (size - img_no_bg.width) // 2
-            y_offset = (size - img_no_bg.height) // 2
-            canvas.paste(img_no_bg, (x_offset, y_offset))
-            
-            # Pixelate
-            small = canvas.resize((px_size, px_size), Image.Resampling.NEAREST)
-            pixelated = small.resize((size, size), Image.Resampling.NEAREST)
-            
-            # Save
-            out_path = os.path.join(DEST_DIR, dest)
-            pixelated.save(out_path)
-            print(f"Saved to {out_path}")
-            
-        except Exception as e:
-            print(f"Failed to process {dest}: {e}")
+        # Glow
+        if glow_col:
+            draw.line([start_x, start_y, end_x, end_y], fill=glow_col, width=rod_thick+4)
+            if lv >= 19:
+                 draw.ellipse([end_x-8, end_y-8, end_x+8, end_y+8], fill=glow_col)
 
-if __name__ == "__main__":
-    main()
+        # Rod Body
+        draw.line([start_x, start_y, end_x, end_y], fill=rod_col, width=rod_thick)
+
+        # Deco
+        if deco_col:
+            draw.ellipse([start_x+3, start_y-15, start_x+7, start_y-11], fill=deco_col)
+            if lv >= 16:
+                draw.polygon([(end_x-4, end_y), (end_x, end_y-6), (end_x+4, end_y), (end_x, end_y+4)], fill=deco_col)
+            else:
+                draw.ellipse([end_x-2, end_y-2, end_x+2, end_y+2], fill=deco_col)
+
+        out_path = os.path.join('assets', 'images', f'char_lv{lv}.png')
+        char_img.save(out_path)
+        print(f"Saved {out_path}")
+
+if __name__ == '__main__':
+    dad_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_dad_1771967403307.png'
+    mom_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_mom_1771967417888.png'
+    jeongwoo_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_jeongwoo_1771967438083.png'
+    seyeon_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\portrait_seyeon_1771967458136.png'
+    char_base_path = r'C:\Users\QuIC\.gemini\antigravity\brain\50fe2dff-bdda-46a4-b0da-423aef079172\char_base_jeongwoo_1771967474428.png'
+
+    os.makedirs(os.path.join('assets', 'images'), exist_ok=True)
+
+    process_portrait(dad_path, 'char_dad.png')
+    process_portrait(mom_path, 'char_mom.png')
+    process_portrait(jeongwoo_path, 'char_jeongwoo.png')
+    process_portrait(seyeon_path, 'char_seyeon.png')
+
+    process_character_sprite(char_base_path)
+    print("Done processing AI images!")

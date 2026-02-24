@@ -61,8 +61,8 @@ def create_portrait(filename, char_type):
         
     elif char_type == 'seyeon':
         # --- 세연 (긴 단발머리/양갈래) ---
-        # Body (Pink shirt)
-        draw.rounded_rectangle([40, 110, 120, 160], radius=15, fill=(255, 182, 193, 255))
+        # Body (Mint shirt)
+        draw.rounded_rectangle([40, 110, 120, 160], radius=15, fill=(0, 250, 154, 255))
         
         # Long Hair back (Black)
         draw.polygon([(30, 60), (130, 60), (140, 150), (20, 150)], fill=(20, 20, 20, 255))

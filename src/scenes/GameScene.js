@@ -669,11 +669,11 @@ export default class GameScene extends Phaser.Scene {
 
                 if (quizResult === true) {
                     // 정답 시 20% 추가 보상
-                    finalGold += Math.floor(baseGold * 0.2);
+                    finalGold = Math.floor(finalGold * 1.2);
                     this.cameras.main.flash(300, 255, 215, 0); // 황금색 플래시 보너스 피드백
 
-                    // 수학 퀴즈 맞춘 후 25% 확률로 타이핑 퀴즈
-                    if (Math.random() < 0.25) {
+                    // 수학 퀴즈 맞춘 후 35% 확률로 타이핑 퀴즈
+                    if (Math.random() < 0.35) {
                         showTypingQuiz = true;
                     }
                 } else if (quizResult === false) {
@@ -682,12 +682,12 @@ export default class GameScene extends Phaser.Scene {
                     this.cameras.main.shake(300, 0.02); // 오답 피드백 흔들림
                 }
 
-                // 타이핑 퀴즈 실행 (수학 퀴즈 정답 시 25% 확률)
+                // 타이핑 퀴즈 실행 (수학 퀴즈 정답 시 35% 확률)
                 if (showTypingQuiz) {
                     const typingResult = await window.gameManagers.uiManager.showTypingQuiz();
                     if (typingResult) {
-                        // 타이핑 퀴즈 정답 시 추가 20% 상향
-                        finalGold += Math.floor(baseGold * 0.2);
+                        // 타이핑 퀴즈 정답 시 기존 보상값(finalGold)의 20% 추가 상승 (복리 계산)
+                        finalGold = Math.floor(finalGold * 1.2);
                         this.cameras.main.flash(300, 255, 20, 147); // 핑크색 플래시 보너스 피드백
                     }
                 }

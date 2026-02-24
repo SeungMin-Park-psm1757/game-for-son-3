@@ -20,19 +20,23 @@ export default class UIManager {
             this.container.style.pointerEvents = 'auto';
 
             // 8세 난이도: 3~12 + 1~8 혹은 빼기
-            const num1 = Math.floor(Math.random() * 10) + 3;   // 3 ~ 12
-            const num2 = Math.floor(Math.random() * 8) + 1;    // 1 ~ 8
+            let rnd1 = Math.floor(Math.random() * 10) + 3;   // 3 ~ 12
+            let rnd2 = Math.floor(Math.random() * 8) + 1;    // 1 ~ 8
             const isAddition = Math.random() > 0.5;
+
+            // 항상 외쪽 숫자(n1)가 오른쪽 숫자(n2)보다 크거나 같도록 고정
+            const n1 = Math.max(rnd1, rnd2);
+            const n2 = Math.min(rnd1, rnd2);
 
             let operatorSymbol = '';
             let correctAnswer = 0;
 
             if (isAddition) {
                 operatorSymbol = '+';
-                correctAnswer = num1 + num2;
+                correctAnswer = n1 + n2;
             } else {
                 operatorSymbol = '−';
-                correctAnswer = num1 - num2;
+                correctAnswer = n1 - n2;
             }
 
             // 물고기 아이콘 렌더링 (🐟 이모지를 num1개, num2개 나열)
@@ -56,16 +60,16 @@ export default class UIManager {
                     <p style="font-size:18px; color:#666; margin-bottom:10px;">물고기를 세어보세요!</p>
                     <div class="quiz-icon-area">
                         <div class="quiz-fish-group">
-                            ${renderFishIcons(num1)}
+                            ${renderFishIcons(n1)}
                         </div>
                         <div class="quiz-operator">${operatorSymbol}</div>
                         <div class="quiz-fish-group">
-                            ${renderFishIcons(num2)}
+                            ${renderFishIcons(n2)}
                         </div>
                         <div class="quiz-operator">=</div>
                         <div class="quiz-answer-mark">?</div>
                     </div>
-                    <p class="quiz-question" style="font-size:28px; margin-top:10px;">${num1} ${operatorSymbol} ${num2} = ?</p>
+                    <p class="quiz-question" style="font-size:28px; margin-top:10px;">${n1} ${operatorSymbol} ${n2} = ?</p>
                     <div class="quiz-choices">
                         <button class="choice-btn" data-answer="${choices[0]}">${choices[0]}</button>
                         <button class="choice-btn" data-answer="${choices[1]}">${choices[1]}</button>
@@ -118,10 +122,12 @@ export default class UIManager {
             this.isQuizActive = true;
             this.container.style.pointerEvents = 'auto';
 
+            // 3~5글자 한글 단어 20개
             const wordList = [
-                '학교', '친구', '우유', '사과', '나무', '하늘', '바다', '나비', '기차', '포도',
-                '오이', '가지', '모자', '구두', '바지', '치마', '누나', '언니', '형아', '동생',
-                '엄마', '아빠', '우산', '비누', '노래', '공부', '놀이', '노트', '연필', '지우개'
+                '장난감', '아이스크림', '소방차', '자전거', '비행기',
+                '다람쥐', '개구리', '무지개', '놀이터', '피아노',
+                '자동차', '코끼리', '강아지', '오렌지', '태권도',
+                '햄버거', '초콜릿', '병아리', '고양이', '우리집'
             ];
             const targetWord = wordList[Math.floor(Math.random() * wordList.length)];
 
@@ -297,6 +303,17 @@ export default class UIManager {
 
         // 세연이를 위한 최고급 장난감 (10,000골드 이상 해금)
         const ENDING_ITEM_COST = 10000;
+        // 낚싯대(Rod Power) 레벨에 따른 NPC 아바타 변화 로직
+        const rodLevel = s.rodPower;
+        let npcAvatar = '👴'; // Lv 1~4
+        if (rodLevel >= 15) {
+            npcAvatar = '👑'; // Lv 15~ (만렙 근처)
+        } else if (rodLevel >= 10) {
+            npcAvatar = '🤠'; // Lv 10~14
+        } else if (rodLevel >= 5) {
+            npcAvatar = '😎'; // Lv 5~9
+        }
+
         const canBuyEnding = this.playerModel.gold >= ENDING_ITEM_COST;
         const showEndingItem = this.playerModel.highestChapter >= 3;
 
@@ -328,7 +345,7 @@ export default class UIManager {
                 
                 <div class="shop-content">
                     <div class="shop-npc">
-                        <div class="npc-avatar">👴</div>
+                        <div class="npc-avatar" id="npc-avatar-display">${npcAvatar}</div>
                         <div class="npc-bubble">"${randomQuote}"</div>
                     </div>
                     
