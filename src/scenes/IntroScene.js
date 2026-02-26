@@ -30,9 +30,9 @@ export default class IntroScene extends Phaser.Scene {
         this.bg.setTint(0x777777); // 인트로 화면은 조금 어둡게
 
         const titleFontSize = Math.max(40, Math.round(width * 0.11)) + 'px';
-        const titleText = this.add.text(width / 2, height * 0.15, '정우의 낚시 대모험!', {
+        const titleText = this.add.text(width / 2, height * 0.12, '정우의 낚시 대모험!', {
             fontSize: titleFontSize,
-            fontFamily: 'Arial', // Fallback, we can use bold
+            fontFamily: 'Arial',
             fontStyle: 'bold',
             color: '#FFFFFF',
             stroke: '#0055FF',
@@ -52,7 +52,7 @@ export default class IntroScene extends Phaser.Scene {
         });
 
         const subFontSize = Math.max(18, Math.round(width * 0.044)) + 'px';
-        this.add.text(width / 2, height * 0.28, '낚시할 지역을 선택하세요', {
+        this.add.text(width / 2, height * 0.24, '낚시할 지역을 선택하세요', {
             fontSize: subFontSize,
             fontFamily: 'Arial',
             color: '#FFFFFF',
@@ -66,9 +66,9 @@ export default class IntroScene extends Phaser.Scene {
 
         // 챕터 선택 버튼들 생성 (언락되지 않은 챕터는 비활성화/회색 처리)
         // 모바일 최적화: 버튼 간격을 조금 더 좁히고 크기 조정
-        this.createChapterButton(width / 2, height * 0.42, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
-        this.createChapterButton(width / 2, height * 0.55, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
-        this.createChapterButton(width / 2, height * 0.68, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
+        this.createChapterButton(width / 2, height * 0.38, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
+        this.createChapterButton(width / 2, height * 0.50, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
+        this.createChapterButton(width / 2, height * 0.62, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
 
         // 진행 상태 안내 텍스트
         const goalFontSize = width < 360 ? '16px' : '20px';
@@ -77,25 +77,26 @@ export default class IntroScene extends Phaser.Scene {
             const nextNames = { 1: '연안', 2: '먼 바다', 3: '엔딩' };
             const nextName = nextNames[pm.currentChapter] || '';
             const percent = Math.min(100, Math.floor((pm.gold / goal) * 100));
-            this.add.text(width / 2, height * 0.86, `🎯 ${nextName} 해금: ${pm.gold} / ${goal} G (${percent}%)`, {
+            this.add.text(width / 2, height * 0.76, `🎯 ${nextName} 해금: ${pm.gold} / ${goal} G (${percent}%)`, {
                 fontSize: goalFontSize, fontFamily: 'Arial', color: '#FFD700',
                 stroke: '#000', strokeThickness: 3
             }).setOrigin(0.5);
         } else {
-            this.add.text(width / 2, height * 0.86, '🎉 모든 챕터 클리어! 상점에서 엔딩 아이템을 확인하세요!', {
+            this.add.text(width / 2, height * 0.76, '🎉 모든 챕터 클리어! 상점에서 엔딩 아이템을 확인하세요!', {
                 fontSize: goalFontSize, fontFamily: 'Arial', color: '#FFD700',
                 stroke: '#000', strokeThickness: 3
             }).setOrigin(0.5);
         }
 
         // --- 물고기 기록 (마일스톤) 버튼 (중앙 하단) ---
-        const milestoneBtnSize = width < 360 ? '16px' : '20px';
-        const milestoneBtn = this.add.text(width / 2, height * 0.94, '🐟 잡은 물고기 기록 보기', {
+        const milestoneBtnSize = width < 360 ? '20px' : '28px'; // Increased font size
+        const milestoneBtn = this.add.text(width / 2, height * 0.85, '🐟 잡은 물고기 기록 보기', {
             fontSize: milestoneBtnSize,
             fontFamily: 'Arial',
+            fontStyle: 'bold',
             color: '#FFFFFF',
             backgroundColor: '#FF8C00',
-            padding: { x: 15, y: 8 }
+            padding: { x: 20, y: 12 }
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
         milestoneBtn.on('pointerdown', () => {
@@ -113,7 +114,7 @@ export default class IntroScene extends Phaser.Scene {
 
         // --- 초기화 버튼 (좌측 하단) ---
         const resetBtnSize = width < 360 ? '14px' : '18px';
-        const resetBtn = this.add.text(20, height - 90, '⚠️ 데이터 초기화', {
+        const resetBtn = this.add.text(20, height - 120, '⚠️ 데이터 초기화', {
             fontSize: resetBtnSize,
             fontFamily: 'Arial',
             color: '#FFCCCC',

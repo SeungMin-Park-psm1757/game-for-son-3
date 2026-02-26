@@ -59,6 +59,25 @@ export default class StoryScene extends Phaser.Scene {
             lineSpacing: 10
         }).setOrigin(0, 0);
 
+        // 건너뛰기 버튼 (좌측 상단)
+        const skipBtn = this.add.text(20, 20, '⏭️ 건너뛰기', {
+            fontSize: '20px',
+            fontFamily: 'Arial',
+            color: '#FFFFFF',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            padding: { x: 10, y: 5 },
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0, 0).setInteractive({ useHandCursor: true });
+
+        skipBtn.on('pointerdown', () => {
+            // 건너뛰기는 딜레이 없이 즉시 종료
+            window.gameManagers.soundManager.playCoin(); // 효과음
+            this.endStory();
+        });
+        skipBtn.on('pointerover', () => skipBtn.setTint(0xaaaaaa));
+        skipBtn.on('pointerout', () => skipBtn.clearTint());
+
         // 클릭 안내 텍스트
         this.nextIndicator = this.add.text(dialogBoxX + dialogBoxWidth / 2 - 20, dialogBoxY + dialogBoxHeight / 2 - 20, '▼ 클릭해서 다음으로', {
             fontSize: '20px',
@@ -75,8 +94,14 @@ export default class StoryScene extends Phaser.Scene {
             duration: 500
         });
 
+        // 이벤트 시작 시간 기록 (무의식적 클릭 방지용)
+        this.sceneStartTime = this.time.now;
+
         // 씬 클릭 시 다음 대사로 넘어가기
         this.input.on('pointerdown', () => {
+            // 씬 시작 후 1초(1000ms) 이내의 클릭은 무시 (무의식적 터치 방지)
+            if (this.time.now - this.sceneStartTime < 1000) return;
+
             // 짧은 연타 방지 디바운싱
             if (this.time.now - (this.lastClick || 0) < 200) return;
             this.lastClick = this.time.now;

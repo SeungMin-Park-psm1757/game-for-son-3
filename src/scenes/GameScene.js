@@ -97,14 +97,14 @@ export default class GameScene extends Phaser.Scene {
         else charY = height * 0.7;
 
         const charTexture = this.getCharacterTextureKey();
-        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(1.5);
+        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(2.25);
 
         this.fishingLine = this.add.graphics();
         this.fishingLine.setDepth(1); // 찌(2) 아래, 물고기(1)와 동일선상 (물 위)
 
         // 찌 (Lure) 스프라이트 - 초기 숨김
         this.lure = this.add.image(0, 0, 'lure').setVisible(false).setDepth(2);
-        this.lure.setScale(0.5); // 찌 크기 추가 축소
+        this.lure.setScale(0.13); // 루어 크기 1/3로 축소 (기존 0.4 기준)
 
         // 물고기 (Fish) 스프라이트 - 초기 숨김 (나중에 텍스처 변경)
         this.fish = this.add.image(0, 0, 'fish_pirami').setVisible(false).setDepth(1);
@@ -171,10 +171,10 @@ export default class GameScene extends Phaser.Scene {
             const newTexture = this.getCharacterTextureKey();
             this.character.setTexture(newTexture);
 
-            // 시각적 피드백 (반짝임) - 크기가 1.3배이므로 맞춰서 수정
+            // 시각적 피드백 (반짝임) - 크기가 2.25배이므로 맞춰서 수정
             this.tweens.add({
                 targets: this.character,
-                scale: { from: 1.5, to: 1.3 },
+                scale: { from: 2.25, to: 1.95 },
                 duration: 300,
                 ease: 'Bounce.easeOut'
             });
