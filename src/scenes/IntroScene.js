@@ -30,7 +30,7 @@ export default class IntroScene extends Phaser.Scene {
         this.bg.setTint(0x777777); // 인트로 화면은 조금 어둡게
 
         const titleFontSize = Math.max(40, Math.round(width * 0.11)) + 'px';
-        const titleText = this.add.text(width / 2, height * 0.2, '정우의 낚시 대모험!', {
+        const titleText = this.add.text(width / 2, height * 0.15, '정우의 낚시 대모험!', {
             fontSize: titleFontSize,
             fontFamily: 'Arial', // Fallback, we can use bold
             fontStyle: 'bold',
@@ -52,7 +52,7 @@ export default class IntroScene extends Phaser.Scene {
         });
 
         const subFontSize = Math.max(18, Math.round(width * 0.044)) + 'px';
-        this.add.text(width / 2, height * 0.33, '낚시할 지역을 선택하세요', {
+        this.add.text(width / 2, height * 0.28, '낚시할 지역을 선택하세요', {
             fontSize: subFontSize,
             fontFamily: 'Arial',
             color: '#FFFFFF',
@@ -66,9 +66,9 @@ export default class IntroScene extends Phaser.Scene {
 
         // 챕터 선택 버튼들 생성 (언락되지 않은 챕터는 비활성화/회색 처리)
         // 모바일 최적화: 버튼 간격을 조금 더 좁히고 크기 조정
-        this.createChapterButton(width / 2, height * 0.48, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
-        this.createChapterButton(width / 2, height * 0.62, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
-        this.createChapterButton(width / 2, height * 0.76, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
+        this.createChapterButton(width / 2, height * 0.42, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
+        this.createChapterButton(width / 2, height * 0.55, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
+        this.createChapterButton(width / 2, height * 0.68, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
 
         // 진행 상태 안내 텍스트
         const goalFontSize = width < 360 ? '16px' : '20px';

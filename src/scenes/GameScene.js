@@ -97,14 +97,14 @@ export default class GameScene extends Phaser.Scene {
         else charY = height * 0.7;
 
         const charTexture = this.getCharacterTextureKey();
-        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(1.3);
+        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(1.5);
 
         this.fishingLine = this.add.graphics();
         this.fishingLine.setDepth(1); // 찌(2) 아래, 물고기(1)와 동일선상 (물 위)
 
         // 찌 (Lure) 스프라이트 - 초기 숨김
         this.lure = this.add.image(0, 0, 'lure').setVisible(false).setDepth(2);
-        this.lure.setScale(1.2); // 새로 만들어진 32x32 픽셀 기준 1.2배 확대
+        this.lure.setScale(0.5); // 찌 크기 추가 축소
 
         // 물고기 (Fish) 스프라이트 - 초기 숨김 (나중에 텍스처 변경)
         this.fish = this.add.image(0, 0, 'fish_pirami').setVisible(false).setDepth(1);
