@@ -93,10 +93,10 @@ export default class GameScene extends Phaser.Scene {
         // 캐릭터 렌더링 (하단 선착장에 위치)
         // 지역마다 캐릭터가 조금 더 앞/뒤에 설 수 있게 조정 (임시)
         let charY = height * 0.8;
-        if (this.region === 1) charY = height * 0.85;
-        else if (this.region === 2) charY = height * 0.75;
-        else if (this.region === 3) charY = height * 0.7;
-        else if (this.region === 4) charY = height * 0.65;
+        if (this.region === 1) charY = height * 0.85; // 민물 (아래 얕은 물가)
+        else if (this.region === 2) charY = height * 0.75; // 연안 (중하단 갯바위)
+        else if (this.region === 3) charY = height * 0.55; // 먼 바다 (상단-중앙 배 위)
+        else if (this.region === 4) charY = height * 0.45; // 보물섬 (상단-중앙 섬 위)
 
         const charTexture = this.getCharacterTextureKey();
         this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(1.26);
