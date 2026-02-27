@@ -36,7 +36,8 @@ export default class PlayerModel {
         this.chapterGoals = {
             1: 3000,
             2: 8000,
-            3: 20000
+            3: 20000,
+            4: 30000
         };
     }
 
@@ -63,13 +64,13 @@ export default class PlayerModel {
 
     // 챕터 진행 목표 달성 여부 확인
     checkChapterGoal() {
-        if (this.currentChapter > 3) return false; // 이미 엔딩 봄
+        if (this.currentChapter > 4) return false; // 이미 엔딩 봄
         const goal = this.chapterGoals[this.currentChapter];
         return this.gold >= goal;
     }
 
     advanceChapter() {
-        if (this.currentChapter <= 3) {
+        if (this.currentChapter <= 4) {
             this.currentChapter++;
             if (this.currentChapter > this.highestChapter) {
                 this.highestChapter = this.currentChapter;

@@ -66,15 +66,16 @@ export default class IntroScene extends Phaser.Scene {
 
         // 챕터 선택 버튼들 생성 (언락되지 않은 챕터는 비활성화/회색 처리)
         // 모바일 최적화: 버튼 간격을 조금 더 좁히고 크기 조정
-        this.createChapterButton(width / 2, height * 0.38, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
-        this.createChapterButton(width / 2, height * 0.50, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
-        this.createChapterButton(width / 2, height * 0.62, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
+        this.createChapterButton(width / 2, height * 0.32, '🌊 챕터 1: 민물', 1, highestChapter >= 1 ? 0x4CAF50 : 0x555555, highestChapter >= 1);
+        this.createChapterButton(width / 2, height * 0.43, '⛱️ 챕터 2: 연안', 2, highestChapter >= 2 ? 0x2196F3 : 0x555555, highestChapter >= 2);
+        this.createChapterButton(width / 2, height * 0.54, '🐋 챕터 3: 바다', 3, highestChapter >= 3 ? 0x3F51B5 : 0x555555, highestChapter >= 3);
+        this.createChapterButton(width / 2, height * 0.65, '🏴‍☠️ 챕터 4: 보물섬', 4, highestChapter >= 4 ? 0x8B0000 : 0x555555, highestChapter >= 4);
 
         // 진행 상태 안내 텍스트
         const goalFontSize = width < 360 ? '16px' : '20px';
-        if (pm.currentChapter <= 3) {
+        if (pm.currentChapter <= 4) {
             const goal = pm.chapterGoals[pm.currentChapter];
-            const nextNames = { 1: '연안', 2: '먼 바다', 3: '엔딩' };
+            const nextNames = { 1: '연안', 2: '먼 바다', 3: '보물섬', 4: '엔딩' };
             const nextName = nextNames[pm.currentChapter] || '';
             const percent = Math.min(100, Math.floor((pm.gold / goal) * 100));
             this.add.text(width / 2, height * 0.76, `🎯 ${nextName} 해금: ${pm.gold} / ${goal} G (${percent}%)`, {
@@ -136,6 +137,8 @@ export default class IntroScene extends Phaser.Scene {
 
         resetBtn.on('pointerover', () => resetBtn.setTint(0xff0000));
         resetBtn.on('pointerout', () => resetBtn.clearTint());
+
+
     }
 
     createChapterButton(x, y, text, regionCode, color, isUnlocked) {

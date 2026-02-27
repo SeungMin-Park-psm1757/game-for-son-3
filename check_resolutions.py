@@ -12,6 +12,7 @@ def check_resolutions():
             path = os.path.join(dir_path, filename)
             try:
                 with Image.open(path) as img:
+                    print(f"IMAGE: {filename} - {img.size}")
                     if img.width < 128 or img.height < 128:
                         low_res_files.append((filename, img.size))
                         print(f"LOW RES: {filename} - {img.size}")

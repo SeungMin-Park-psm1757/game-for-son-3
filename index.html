@@ -11,6 +11,34 @@
 </head>
 
 <body>
+    <!-- 치트키: ?cheat URL 파라미터로 모든 지역 해금 (Phaser 로드 전 실행) -->
+    <script>
+        if (new URLSearchParams(window.location.search).has('cheat')) {
+            let data = {};
+            try {
+                const r = localStorage.getItem('fishingGameData');
+                if (r) data = JSON.parse(r);
+            } catch (e) { }
+
+            // 필수 필드 보정 (데이터 누락으로 인한 크래시 방지)
+            if (!data.stats) {
+                data.stats = { rodPower: 1, catchChance: 1, reelSpeed: 1, rodLuck: 1 };
+            }
+            if (!data.fishCollection) data.fishCollection = {};
+            if (!data.hasSeenMidChapterEvent) data.hasSeenMidChapterEvent = {};
+            if (!data.fishMilestonesSeen) data.fishMilestonesSeen = {};
+
+            data.highestChapter = 4;
+            data.currentChapter = 4;
+            data.gold = (data.gold || 0) + 100000;
+
+            localStorage.setItem('fishingGameData', JSON.stringify(data));
+            alert('치트키 활성화!\n모든 지역 해금 + 10만 골드 지급!');
+
+            // 깨끗한 URL로 이동 (파라미터 제거)
+            window.location.href = window.location.origin + window.location.pathname;
+        }
+    </script>
     <div id="game-container"></div>
 
     <!-- UI Overlay (Canvas 위쪽에 위치) -->
@@ -25,7 +53,7 @@
     </div>
 
     <!-- ES6 Module Entry -->
-    <script type="module" src="src/main.js"></script>
+    <script type="module" src="src/main.js?v=20260227b"></script>
 </body>
 
 </html>

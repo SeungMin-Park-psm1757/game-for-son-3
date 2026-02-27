@@ -10,6 +10,7 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('bg_freshwater', 'assets/images/bg_freshwater.png');
         this.load.image('bg_coast', 'assets/images/bg_coast.png');
         this.load.image('bg_sea', 'assets/images/bg_sea.png');
+        this.load.image('bg_treasure_island', 'assets/images/bg_treasure_island.png');
         this.load.image('lure', 'assets/images/lure.png');
 
         // 캐릭터 성장 스프라이트 변형 (Rod Power 1~20 레벨 전체 렌더링)
@@ -67,6 +68,28 @@ export default class BootScene extends Phaser.Scene {
         this.load.image('item_trash', 'assets/images/item_trash.png');
         this.load.image('item_treasure', 'assets/images/item_treasure.png');
 
+        // 보물섬 (Region 4 - 14마리)
+        this.load.image('fish_flying_fish', 'assets/images/fish_flying_fish.png');
+        this.load.image('fish_parrotfish', 'assets/images/fish_parrotfish.png');
+        this.load.image('fish_lionfish', 'assets/images/fish_lionfish.png');
+        this.load.image('fish_moray_eel', 'assets/images/fish_moray_eel.png');
+        this.load.image('fish_barracuda', 'assets/images/fish_barracuda.png');
+        this.load.image('fish_mahi_mahi', 'assets/images/fish_mahi_mahi.png');
+        this.load.image('fish_giant_trevally', 'assets/images/fish_giant_trevally.png');
+        this.load.image('fish_sailfish', 'assets/images/fish_sailfish.png');
+        this.load.image('fish_hammerhead', 'assets/images/fish_hammerhead.png');
+        this.load.image('fish_manta_ray', 'assets/images/fish_manta_ray.png');
+        this.load.image('fish_giant_squid', 'assets/images/fish_giant_squid.png');
+        this.load.image('fish_oarfish', 'assets/images/fish_oarfish.png');
+        this.load.image('fish_coelacanth', 'assets/images/fish_coelacanth.png');
+        this.load.image('fish_golden_fish', 'assets/images/fish_golden_fish.png');
+
+        // 보물섬 전용 특수 아이템
+        this.load.image('item_treasure_map', 'assets/images/item_treasure_map.png');
+        this.load.image('item_pirates_sword', 'assets/images/item_pirates_sword.png');
+        this.load.image('item_pearl', 'assets/images/item_pearl.png');
+        this.load.image('item_crown', 'assets/images/item_crown.png');
+
         // 배경음악 로드
         this.load.audio('bgm', 'assets/audio/back.mp3');
     }
@@ -77,7 +100,8 @@ export default class BootScene extends Phaser.Scene {
             'fish_pirami', 'fish_loach', 'fish_boonguh', 'fish_smelt', 'fish_catfish', 'fish_ssogari', 'fish_carp', 'fish_gamulchi',
             'fish_mangdoong', 'fish_anchovy', 'fish_gizzard_shad', 'fish_urock', 'fish_webfoot_octopus', 'fish_flounder', 'fish_gwangeo', 'fish_sea_bass', 'fish_black_porgy', 'fish_chamdom',
             'fish_godeungeo', 'fish_squid', 'fish_saury', 'fish_spanish_mackerel', 'fish_salmon', 'fish_pollack', 'fish_galchi', 'fish_cod', 'fish_monkfish', 'fish_bangeo', 'fish_tuna', 'fish_sunfish', 'fish_striped_jewfish', 'fish_whale_shark', 'fish_cheongsaechi',
-            'item_shoe', 'item_trash', 'item_treasure'
+            'fish_flying_fish', 'fish_parrotfish', 'fish_lionfish', 'fish_moray_eel', 'fish_barracuda', 'fish_mahi_mahi', 'fish_giant_trevally', 'fish_sailfish', 'fish_hammerhead', 'fish_manta_ray', 'fish_giant_squid', 'fish_oarfish', 'fish_coelacanth', 'fish_golden_fish',
+            'item_shoe', 'item_trash', 'item_treasure', 'item_treasure_map', 'item_pirates_sword', 'item_pearl', 'item_crown'
         ];
         fishKeys.forEach(key => {
             const tex = this.textures.get(key);

@@ -58,6 +58,7 @@ export default class GameScene extends Phaser.Scene {
         let bgKey = 'bg_coast';
         if (this.region === 1) bgKey = 'bg_freshwater';
         else if (this.region === 3) bgKey = 'bg_sea';
+        else if (this.region === 4) bgKey = 'bg_treasure_island';
 
         this.bg = this.add.image(width / 2, height / 2, bgKey);
         this.bg.setDisplaySize(width, height);
@@ -68,7 +69,7 @@ export default class GameScene extends Phaser.Scene {
         this.createWanderingFishes();
 
         // 상태창 UI (임시)
-        const regionNames = { 1: "민물", 2: "연안", 3: "먼 바다" };
+        const regionNames = { 1: "민물", 2: "연안", 3: "먼 바다", 4: "보물섬" };
         const instrFontSize = Math.max(18, Math.round(width * 0.044)) + 'px';
         this.uiElements.instruction = this.add.text(width / 2, height * 0.08, `${regionNames[this.region]}을 탭(클릭)해서 찌를 던지세요!`, {
             fontSize: instrFontSize, fontFamily: 'Arial', color: '#FFFFFF', stroke: '#000000', strokeThickness: 4,
@@ -94,17 +95,18 @@ export default class GameScene extends Phaser.Scene {
         let charY = height * 0.8;
         if (this.region === 1) charY = height * 0.85;
         else if (this.region === 2) charY = height * 0.75;
-        else charY = height * 0.7;
+        else if (this.region === 3) charY = height * 0.7;
+        else if (this.region === 4) charY = height * 0.65;
 
         const charTexture = this.getCharacterTextureKey();
-        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(2.25);
+        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(1.26);
 
         this.fishingLine = this.add.graphics();
         this.fishingLine.setDepth(1); // 찌(2) 아래, 물고기(1)와 동일선상 (물 위)
 
         // 찌 (Lure) 스프라이트 - 초기 숨김
         this.lure = this.add.image(0, 0, 'lure').setVisible(false).setDepth(2);
-        this.lure.setScale(0.13); // 루어 크기 1/3로 축소 (기존 0.4 기준)
+        this.lure.setScale(0.129); // 루어 크기 3배 확대 (기존 0.043 기준)
 
         // 물고기 (Fish) 스프라이트 - 초기 숨김 (나중에 텍스처 변경)
         this.fish = this.add.image(0, 0, 'fish_pirami').setVisible(false).setDepth(1);
@@ -171,10 +173,10 @@ export default class GameScene extends Phaser.Scene {
             const newTexture = this.getCharacterTextureKey();
             this.character.setTexture(newTexture);
 
-            // 시각적 피드백 (반짝임) - 크기가 2.25배이므로 맞춰서 수정
+            // 시각적 피드백 (반짝임) - 크기가 1.26배이므로 맞춰서 수정
             this.tweens.add({
                 targets: this.character,
-                scale: { from: 2.25, to: 1.95 },
+                scale: { from: 1.26, to: 1.092 },
                 duration: 300,
                 ease: 'Bounce.easeOut'
             });
@@ -288,7 +290,8 @@ export default class GameScene extends Phaser.Scene {
     // Phase 1 -> 2 대기
     waitForBite(lureX, lureY) {
         const chanceLevel = window.gameManagers.playerModel.stats.catchChance;
-        const maxWait = Math.max(1000, 4000 - (chanceLevel * 200));
+        const baseMaxWait = this.region === 4 ? 5000 : 4000;
+        const maxWait = Math.max(1000, baseMaxWait - (chanceLevel * 200));
         const waitTime = Phaser.Math.Between(1000, maxWait);
 
         // 물고기 종류 결정 (Rod Luck 적용)
@@ -335,6 +338,7 @@ export default class GameScene extends Phaser.Scene {
                 // 메인 fish 스프라이트에도 반영 (입질 연출용)
                 this.fish.setTexture(this.currentFish.id);
                 this.fish.setScale(this.currentFish.scale * 1.5);
+                console.log(`[DEBUG FISH] ${this.currentFish.id} | FishData scale: ${this.currentFish.scale} | applied: ${this.currentFish.scale * 1.5} | sprite displayW: ${this.fish.displayWidth}, displayH: ${this.fish.displayHeight}`);
                 this.fish.clearTint();
                 this.fish.setVisible(false); // 접근 중에는 approachFish가 보이므로 숨김
             } else {
@@ -466,8 +470,9 @@ export default class GameScene extends Phaser.Scene {
             duration: 50
         });
 
-        // 일정 시간(예: 1.5초) 내에 클릭 안 하면 실패
-        this.time.delayedCall(1500, () => {
+        // 일정 시간 내에 클릭 안 하면 실패 (보물섬은 1.2초로 단축)
+        const biteTimeout = this.region === 4 ? 1200 : 1500;
+        this.time.delayedCall(biteTimeout, () => {
             if (this.gameState === 'BITE') {
                 this.failFishing('물고기가 도망갔어요...');
             }
@@ -676,6 +681,20 @@ export default class GameScene extends Phaser.Scene {
                     this.uiElements.instruction.setText('대박! 황금 보물상자를 낚았습니다!');
                     this.cameras.main.flash(500, 255, 215, 0);
                     window.gameManagers.soundManager.playSuccess();
+                } else if (this.currentFish.id === 'item_treasure_map') {
+                    this.uiElements.instruction.setText('오! 보물 지도의 한 조각이다! 어딘가에 보물이 숨겨져 있나봐!');
+                    this.cameras.main.flash(500, 222, 184, 135);
+                    window.gameManagers.soundManager.playSuccess();
+                } else if (this.currentFish.id === 'item_pirates_sword') {
+                    this.uiElements.instruction.setText('옛날 해적이 쓰던 녹슨 칼이네... 멋있다!');
+                } else if (this.currentFish.id === 'item_pearl') {
+                    this.uiElements.instruction.setText('와!! 엄청 큰 진주다!! 엄마한테 선물해야지!');
+                    this.cameras.main.flash(500, 255, 250, 240);
+                    window.gameManagers.soundManager.playSuccess();
+                } else if (this.currentFish.id === 'item_crown') {
+                    this.uiElements.instruction.setText('전설의 해적왕이 남긴 왕관!! 대박이다!!');
+                    this.cameras.main.flash(800, 255, 215, 0);
+                    window.gameManagers.soundManager.playSuccess();
                 } else if (this.currentFish.id === 'item_shoe') {
                     const shoeMessages = [
                         '에구... 누군가 버린 낡은 신발이네요.',
@@ -699,7 +718,7 @@ export default class GameScene extends Phaser.Scene {
                 }
             } else {
                 // 50% 확률 수학 퀴즈 팝업 (UIManager 연동)
-                const quizResult = await window.gameManagers.uiManager.showMathQuiz();
+                const quizResult = await window.gameManagers.uiManager.showMathQuiz(this.region);
                 let showTypingQuiz = false;
 
                 if (quizResult === true) {
@@ -707,8 +726,9 @@ export default class GameScene extends Phaser.Scene {
                     finalGold = Math.floor(finalGold * 1.2);
                     this.cameras.main.flash(300, 255, 215, 0); // 황금색 플래시 보너스 피드백
 
-                    // 수학 퀴즈 맞춘 후 35% 확률로 타이핑 퀴즈
-                    if (Math.random() < 0.35) {
+                    // 수학 퀴즈 맞춘 후 타이핑 퀴즈 (보물섬은 50%, 기본 35%)
+                    const typingQuizChance = this.region === 4 ? 0.50 : 0.35;
+                    if (Math.random() < typingQuizChance) {
                         showTypingQuiz = true;
                     }
                 } else if (quizResult === false) {
@@ -778,7 +798,7 @@ export default class GameScene extends Phaser.Scene {
 
             // --- 챕터 진행 및 중간 이벤트 체크 ---
             const model = window.gameManagers.playerModel;
-            if (model.currentChapter <= 3) {
+            if (model.currentChapter <= 4) {
                 if (model.checkChapterGoal()) {
                     // 목표 달성 시 챕터 전환
                     this.triggerStoryTransition();
@@ -806,6 +826,12 @@ export default class GameScene extends Phaser.Scene {
                                 { speaker: '세연', portrait: 'char_seyeon', text: '오빠!! 까까 살 돈 반이나 모아써?!' },
                                 { speaker: '정우', portrait: 'char_jeongwoo', text: '세연아, 원양어선에는 과자 공장이 통째로 실려있단다. 기다려라!!' }
                             ];
+                        } else if (model.currentChapter === 4) {
+                            midStoryData = [
+                                { speaker: '아빠', portrait: 'char_dad', text: '(전화) 정우야! 보물섬에 갔다며?! 거기 위험하진 않고?' },
+                                { speaker: '정우', portrait: 'char_jeongwoo', text: '아빠 괜찮아요! 저 여기서 대왕오징어도 봤어요!!' },
+                                { speaker: '세연', portrait: 'char_seyeon', text: '오빠!! 보물 찾으면 나도 줘!!!' }
+                            ];
                         }
 
                         // 이벤트를 보고 난 후 다시 GameScene으로 돌아오도록 설정
@@ -817,6 +843,11 @@ export default class GameScene extends Phaser.Scene {
                         return;
                     }
                 }
+            }
+
+            // --- 보물섬 전용 랜덤 이벤트 (5% 확률) ---
+            if (this.region === 4 && !this.currentFish.isSpecialItem && Math.random() < 0.05) {
+                this.triggerTreasureIslandEvent();
             }
 
             // --- 마일스톤 달성 스토리(칭호) ---
@@ -860,6 +891,15 @@ export default class GameScene extends Phaser.Scene {
                     '아 빵먹고싶다'
                 ];
                 finalMsg = freshMessages[Math.floor(Math.random() * freshMessages.length)];
+            } else if (this.region === 4) {
+                const treasureMessages = [
+                    '해적 유령이 물고기를 가져갔어!',
+                    '앗! 대왕문어 다리에 감겨서 놓쳤어!',
+                    '바다 귀신이 방해한 거야! 분명히!',
+                    '보물 지키는 수호신이 장난치나봐...',
+                    '크라켄이 우리 물고기를 빼앗아갔어!!'
+                ];
+                finalMsg = treasureMessages[Math.floor(Math.random() * treasureMessages.length)];
             } else {
                 const seaMessages = [
                     '아! 놓치고 보니 범고래였어!!',
@@ -902,15 +942,15 @@ export default class GameScene extends Phaser.Scene {
         const currentGold = model.gold;
 
         // 모든 챕터 클리어
-        if (model.highestChapter > 3) {
+        if (model.highestChapter > 4) {
             this.uiElements.goalText.setText('🎉 모든 챕터 클리어! 상점에서 엔딩 아이템을 확인하세요!');
             return;
         }
 
         // 현재 플레이 중인 지역이 아직 미해금 프론티어 챕터일 때만 목표 표시
-        if (this.region === model.currentChapter && model.currentChapter <= 3) {
+        if (this.region === model.currentChapter && model.currentChapter <= 4) {
             const goal = model.chapterGoals[model.currentChapter];
-            const nextRegionNames = { 1: '연안 해금', 2: '먼 바다 해금', 3: '엔딩 해금' };
+            const nextRegionNames = { 1: '연안 해금', 2: '먼 바다 해금', 3: '보물섬 해금', 4: '엔딩 해금' };
             const label = nextRegionNames[model.currentChapter] || '목표';
             const percent = Math.min(100, Math.floor((currentGold / goal) * 100));
 
@@ -947,12 +987,20 @@ export default class GameScene extends Phaser.Scene {
             ];
         } else if (currentCh === 3) {
             storyData = [
-                { speaker: '정우', portrait: 'char_jeongwoo', text: '다 낚았다! 나는 낚시에 천재적인 소질이 있는 게 분명해!!' },
-                { speaker: '아빠', portrait: 'char_dad', text: '정우야, 아빠 휴가나왔다... 응? 낚시 천재라고??' },
-                { speaker: '정우', portrait: 'char_jeongwoo', text: '아빠! 저 원양어선 타러 갈게요! 배웅해주세요!!' },
-                { speaker: '엄마', portrait: 'char_mom', text: '안돼 정우야!! 아직 초등학생이잖아!!' },
-                { speaker: '세연', portrait: 'char_seyeon', text: '오빠 원양어선 타면 까까 못사주자나 앙대!!' },
-                { speaker: '아빠', portrait: 'char_dad', text: '이 녀석 안되겠군, 당장 집으로 들어가자!!' }
+                { speaker: '상점 할아버지', portrait: null, text: '정우야, 너 혹시 보물섬이라고 들어봤냐?' },
+                { speaker: '정우', portrait: 'char_jeongwoo', text: '보물섬이요?! 그런 게 진짜 있어요?!' },
+                { speaker: '상점 할아버지', portrait: null, text: '먼 바다 너머에 전설의 섬이 있다더라. 황금 물고기가 산다는...' },
+                { speaker: '세연', portrait: 'char_seyeon', text: '오빠!! 황금 물고기 잡아와!! 반짝반짝!! ✨' },
+                { speaker: '정우', portrait: 'char_jeongwoo', text: '좋아! 반드시 찾아내고 말겠어! 보물섬으로 출발!!' }
+            ];
+        } else if (currentCh === 4) {
+            storyData = [
+                { speaker: '정우', portrait: 'char_jeongwoo', text: '다 낚았다! 보물섬의 모든 물고기를 정복했어!!' },
+                { speaker: '아빠', portrait: 'char_dad', text: '정우야, 아빠 휴가나왔다... 응? 보물섬까지 갔다고??' },
+                { speaker: '정우', portrait: 'char_jeongwoo', text: '아빠! 저 황금 물고기도 잡았어요!! 전설이 진짜였어요!' },
+                { speaker: '엄마', portrait: 'char_mom', text: '어머머... 우리 정우 정말 대단하구나!!' },
+                { speaker: '세연', portrait: 'char_seyeon', text: '오빠 최고!! 이제 까까 잔뜩 사줘야돼!!' },
+                { speaker: '아빠', portrait: 'char_dad', text: '하하, 우리 정우 이제 집으로 돌아오자! 축하한다 아들!!' }
             ];
         }
 
@@ -969,8 +1017,8 @@ export default class GameScene extends Phaser.Scene {
             onComplete: () => {
                 this.cameras.main.fadeOut(500, 0, 0, 0);
                 this.cameras.main.once('camerafadeoutcomplete', () => {
-                    // EndingScene으로 직행 (챕터 3 클리어시)
-                    if (currentCh === 3) {
+                    // EndingScene으로 직행 (챕터 4 클리어시)
+                    if (currentCh === 4) {
                         this.scene.start('EndingScene');
                     } else {
                         this.scene.start('StoryScene', {
@@ -984,10 +1032,83 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
+    // --- 보물섬 전용 랜덤 이벤트 시스템 ---
+    triggerTreasureIslandEvent() {
+        const events = [
+            {
+                name: '해적선 목격',
+                emoji: '🏴‍☠️',
+                message: '저기... 해적선이 보인다?! 보물이 떨어졌을지도!',
+                effect: () => {
+                    // 다음 1회 보상 2배 버프 (플래그 설정)
+                    this.treasureIslandBuff = { type: 'doubleReward', remaining: 1 };
+                }
+            },
+            {
+                name: '대왕문어 습격',
+                emoji: '🐙',
+                message: '으악! 대왕문어가 배를 흔든다! 물고기가 놀라서 가까이 왔나봐!',
+                effect: () => {
+                    // 다음 1회 게이지 하락 면제 (3초)
+                    this.treasureIslandBuff = { type: 'gaugeImmunity', remaining: 1, duration: 3000 };
+                }
+            },
+            {
+                name: '인어의 노래',
+                emoji: '🧜‍♀️',
+                message: '저 아름다운 노래는 뭐지...? 전설의 물고기가 가까이 온 것 같아!',
+                effect: () => {
+                    // 다음 1회 SSR 확률 3배 (플래그 설정)
+                    this.treasureIslandBuff = { type: 'ssrBoost', remaining: 1 };
+                }
+            },
+            {
+                name: '무지개 출현',
+                emoji: '🌈',
+                message: '와! 바다 위에 무지개가 떴어!! 행운의 징조야!',
+                effect: () => {
+                    // 즉시 보너스 1000G
+                    window.gameManagers.playerModel.addGold(1000);
+                    this.updateGoalText();
+                }
+            }
+        ];
+
+        const event = events[Math.floor(Math.random() * events.length)];
+        event.effect();
+
+        // 이벤트 알림 텍스트 (화면 중심에 크게)
+        const eventText = this.add.text(this.scale.width / 2, this.scale.height * 0.35,
+            `${event.emoji} ${event.name}! ${event.emoji}`, {
+            fontSize: '36px', fontFamily: 'Arial', color: '#FFD700',
+            stroke: '#000000', strokeThickness: 6, fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(100);
+
+        const eventMsg = this.add.text(this.scale.width / 2, this.scale.height * 0.42,
+            event.message, {
+            fontSize: '20px', fontFamily: 'Arial', color: '#FFFFFF',
+            stroke: '#000000', strokeThickness: 4,
+            wordWrap: { width: this.scale.width * 0.8 }, align: 'center'
+        }).setOrigin(0.5).setDepth(100);
+
+        this.cameras.main.flash(400, 255, 215, 0);
+        window.gameManagers.soundManager.playSuccess();
+
+        // 2.5초 후 자동 페이드아웃
+        this.tweens.add({
+            targets: [eventText, eventMsg],
+            alpha: 0,
+            y: eventText.y - 50,
+            duration: 1000,
+            delay: 2000,
+            onComplete: () => { eventText.destroy(); eventMsg.destroy(); }
+        });
+    }
+
     resetFishing() {
         this.gameState = 'IDLE';
         this.catchGauge = 0;
-        const regionNames = { 1: "민물", 2: "연안", 3: "먼 바다" };
+        const regionNames = { 1: "민물", 2: "연안", 3: "먼 바다", 4: "보물섬" };
         this.uiElements.instruction.setText(`${regionNames[this.region]}을 탭(클릭)해서 찌를 던지세요!`);
         this.updateGoalText();
         this.uiElements.gaugeBg.setVisible(false);
@@ -1040,6 +1161,14 @@ export default class GameScene extends Phaser.Scene {
                 if (this.currentFish.grade === 'R') baseDrop = 30;
                 else if (this.currentFish.grade === 'SR') baseDrop = 60;
                 else if (this.currentFish.grade === 'SSR') baseDrop = 100;
+
+                // 보물섬(Region 4) 게이지 하락 강화
+                if (this.region === 4) {
+                    if (this.currentFish.grade === 'N') baseDrop = 25;
+                    else if (this.currentFish.grade === 'R') baseDrop = 50;
+                    else if (this.currentFish.grade === 'SR') baseDrop = 90;
+                    else if (this.currentFish.grade === 'SSR') baseDrop = 150;
+                }
 
                 // 스탯 Reel Speed에 의해 초당 감소폭 완화 (레벨당 3 방어)
                 const dropRate = Math.max(5, baseDrop - (reelLevel * 3));

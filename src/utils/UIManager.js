@@ -11,36 +11,61 @@ export default class UIManager {
     }
 
     // --- 수학 퀴즈 시스템 (도상학 기반 물고기 아이콘 시각화) ---
-    showMathQuiz() {
+    showMathQuiz(currentRegion = 1) {
         return new Promise((resolve) => {
             if (this.isQuizActive) { resolve(null); return; }
-            if (Math.random() > 0.5) { resolve(null); return; }
+            // 보물섬은 60% 확률, 기본 50%
+            const quizChance = currentRegion === 4 ? 0.60 : 0.50;
+            if (Math.random() > quizChance) { resolve(null); return; }
 
             this.isQuizActive = true;
             this.container.style.pointerEvents = 'auto';
 
-            // 8세 난이도: 3~12 + 1~8 혹은 빼기
-            let rnd1 = Math.floor(Math.random() * 10) + 3;   // 3 ~ 12
-            let rnd2 = Math.floor(Math.random() * 8) + 1;    // 1 ~ 8
-            const isAddition = Math.random() > 0.5;
+            const isChapter4 = currentRegion === 4;
+            let n1, n2, operatorSymbol, correctAnswer;
 
-            // 항상 외쪽 숫자(n1)가 오른쪽 숫자(n2)보다 크거나 같도록 고정
-            const n1 = Math.max(rnd1, rnd2);
-            const n2 = Math.min(rnd1, rnd2);
-
-            let operatorSymbol = '';
-            let correctAnswer = 0;
-
-            if (isAddition) {
-                operatorSymbol = '+';
-                correctAnswer = n1 + n2;
+            if (isChapter4) {
+                // 챕터 4 하드모드: 곱셈 33%, 덧셈 33%, 뺄셈 33%
+                const opType = Math.random();
+                if (opType < 0.33) {
+                    // 곱셈 (구구단 2~5단)
+                    n1 = Math.floor(Math.random() * 4) + 2;  // 2~5
+                    n2 = Math.floor(Math.random() * 9) + 1;  // 1~9
+                    operatorSymbol = '×';
+                    correctAnswer = n1 * n2;
+                } else if (opType < 0.66) {
+                    // 덧셈 (큰 숫자)
+                    n1 = Math.floor(Math.random() * 21) + 10; // 10~30
+                    n2 = Math.floor(Math.random() * 16) + 5;  // 5~20
+                    operatorSymbol = '+';
+                    correctAnswer = n1 + n2;
+                } else {
+                    // 뺄셈 (큰 숫자)
+                    n1 = Math.floor(Math.random() * 21) + 15; // 15~35
+                    n2 = Math.floor(Math.random() * 11) + 5;  // 5~15
+                    if (n2 > n1) { const tmp = n1; n1 = n2; n2 = tmp; }
+                    operatorSymbol = '−';
+                    correctAnswer = n1 - n2;
+                }
             } else {
-                operatorSymbol = '−';
-                correctAnswer = n1 - n2;
+                // 기존 챕터: 8세 난이도
+                let rnd1 = Math.floor(Math.random() * 10) + 3;
+                let rnd2 = Math.floor(Math.random() * 8) + 1;
+                const isAddition = Math.random() > 0.5;
+                n1 = Math.max(rnd1, rnd2);
+                n2 = Math.min(rnd1, rnd2);
+                if (isAddition) {
+                    operatorSymbol = '+';
+                    correctAnswer = n1 + n2;
+                } else {
+                    operatorSymbol = '−';
+                    correctAnswer = n1 - n2;
+                }
             }
 
-            // 물고기 아이콘 렌더링 (🐟 이모지를 num1개, num2개 나열)
+            // 물고기 아이콘 렌더링 (챕터 4에서는 숨김)
             const renderFishIcons = (count) => {
+                if (isChapter4) return '';
                 let html = '';
                 for (let i = 0; i < count; i++) {
                     html += '<span class="quiz-fish-icon">🐟</span>';
@@ -48,16 +73,23 @@ export default class UIManager {
                 return html;
             };
 
-            // 오답 보기 2개
+            // 오답 보기 (챕터 4는 4개, 기본 3개)
             let wrong1 = correctAnswer + (Math.floor(Math.random() * 3) + 1);
             let wrong2 = correctAnswer - (Math.floor(Math.random() * 3) + 1);
             if (wrong2 < 0) wrong2 = correctAnswer + (Math.floor(Math.random() * 5) + 2);
-            const choices = [correctAnswer, wrong1, wrong2].sort(() => Math.random() - 0.5);
+            let choices;
+            if (isChapter4) {
+                let wrong3 = correctAnswer + (Math.floor(Math.random() * 5) + 4);
+                if (wrong3 === wrong1 || wrong3 === wrong2) wrong3 = correctAnswer + (Math.floor(Math.random() * 8) + 5);
+                choices = [correctAnswer, wrong1, wrong2, wrong3].sort(() => Math.random() - 0.5);
+            } else {
+                choices = [correctAnswer, wrong1, wrong2].sort(() => Math.random() - 0.5);
+            }
 
-            const popupHTML = `
-                <div id="quiz-popup" class="popup-box quiz-shake">
-                    <h2>🐟 보너스 퀴즈 타임! 🐟</h2>
-                    <p style="font-size:18px; color:#666; margin-bottom:10px;">물고기를 세어보세요!</p>
+            const quizTitle = isChapter4 ? '🏴‍☠️ 보물섬 난이도 UP! 퀴즈! 🏴‍☠️' : '🐟 보너스 퀴즈 타임! 🐟';
+            const quizHint = isChapter4 ? '머리로 계산해보세요!' : '물고기를 세어보세요!';
+
+            const fishIconArea = isChapter4 ? '' : `
                     <div class="quiz-icon-area">
                         <div class="quiz-fish-group">
                             ${renderFishIcons(n1)}
@@ -68,12 +100,20 @@ export default class UIManager {
                         </div>
                         <div class="quiz-operator">=</div>
                         <div class="quiz-answer-mark">?</div>
-                    </div>
+                    </div>`;
+
+            const choiceButtonsHTML = choices.map(c =>
+                `<button class="choice-btn" data-answer="${c}">${c}</button>`
+            ).join('\n                        ');
+
+            const popupHTML = `
+                <div id="quiz-popup" class="popup-box quiz-shake">
+                    <h2>${quizTitle}</h2>
+                    <p style="font-size:18px; color:#666; margin-bottom:10px;">${quizHint}</p>
+                    ${fishIconArea}
                     <p class="quiz-question" style="font-size:28px; margin-top:10px;">${n1} ${operatorSymbol} ${n2} = ?</p>
                     <div class="quiz-choices">
-                        <button class="choice-btn" data-answer="${choices[0]}">${choices[0]}</button>
-                        <button class="choice-btn" data-answer="${choices[1]}">${choices[1]}</button>
-                        <button class="choice-btn" data-answer="${choices[2]}">${choices[2]}</button>
+                        ${choiceButtonsHTML}
                     </div>
                 </div>
             `;
@@ -349,7 +389,7 @@ export default class UIManager {
         }
 
         const canBuyEnding = this.playerModel.gold >= ENDING_ITEM_COST;
-        const showEndingItem = this.playerModel.highestChapter >= 3;
+        const showEndingItem = this.playerModel.highestChapter >= 4;
 
         let endingItemHTML = '';
         if (showEndingItem) {

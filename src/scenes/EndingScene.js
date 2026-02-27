@@ -39,12 +39,12 @@ export default class EndingScene extends Phaser.Scene {
 
         // 엔딩 스토리 대화문
         const storyLines = [
-            { speaker: '정우', portrait: 'char_jeongwoo', text: '세연아!! 오빠가 열심히 낚시해서 돈을 벌었어!!' },
-            { speaker: '정우', portrait: 'char_jeongwoo', text: '이거 봐! 최고급 장난감!! 세연이 줄라고 샀어!' },
+            { speaker: '정우', portrait: 'char_jeongwoo', text: '세연아!! 오빠가 보물섬에서 황금 물고기를 잡았어!!' },
+            { speaker: '정우', portrait: 'char_jeongwoo', text: '이거 봐! 보물섬에서 번 돈으로 최고급 장난감 샀어!' },
             { speaker: '세연', portrait: 'char_seyeon', text: '와아아아!! 오빠 최고!!! 오빠가 세상에서 제일 좋아!!!! 💖💖💖' },
-            { speaker: '엄마', portrait: 'char_mom', text: '우리 정우... 동생을 위해 이렇게까지... 엄마가 너무 자랑스럽다 ㅠㅠ' },
-            { speaker: '아빠', portrait: 'char_dad', text: '(전화) 정우야! 아빠가 들었어. 최고의 오빠구나! 사랑한다 아들!' },
-            { speaker: '정우', portrait: 'char_jeongwoo', text: '히히... 당연하지! 나는 세연이의 최고의 오빠니까!! 😎' }
+            { speaker: '엄마', portrait: 'char_mom', text: '우리 정우... 보물섬까지 가서 이렇게까지... 엄마가 너무 자랑스럽다 ㅠㅠ' },
+            { speaker: '아빠', portrait: 'char_dad', text: '(전화) 정우야! 보물섬의 전설을 이뤘다며?! 최고의 오빠구나! 사랑한다 아들!' },
+            { speaker: '정우', portrait: 'char_jeongwoo', text: '히히... 당연하지! 나는 세연이의 최고의 오빠이자, 전설의 낚시꾼이니까!! 😎🐟✨' }
         ];
 
         this.currentLineIndex = 0;
@@ -54,9 +54,9 @@ export default class EndingScene extends Phaser.Scene {
         this.dialogBg = this.add.rectangle(width / 2, height * 0.75, width * 0.9, 180, 0x000000, 0.7)
             .setDepth(10);
 
-        // 초상화
+        // 초상화 (512x512 표준 기반)
         this.portrait = this.add.image(120, height * 0.75, 'char_jeongwoo')
-            .setDepth(11).setScale(2);
+            .setDepth(11).setScale(0.45);
 
         // 이름표
         this.speakerText = this.add.text(240, height * 0.75 - 60, '', {
@@ -116,8 +116,8 @@ export default class EndingScene extends Phaser.Scene {
             this.portrait.setTexture(line.portrait);
         }
 
-        // 등장 애니메이션
-        this.tweens.add({ targets: this.portrait, scale: { from: 1.8, to: 2 }, duration: 200 });
+        // 등장 애니메이션 (표준 0.45 배율 기반)
+        this.tweens.add({ targets: this.portrait, scale: { from: 0.4, to: 0.45 }, duration: 200 });
     }
 
     showCredits() {

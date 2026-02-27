@@ -26,9 +26,9 @@ export default class StoryScene extends Phaser.Scene {
         // 반투명 오버레이 (대화에 집중할 수 있도록)
         this.add.rectangle(0, 0, width, height, 0x000000, 0.4).setOrigin(0, 0);
 
-        // 초상화 이미지 객체
-        this.portraitImage = this.add.image(width * 0.2, height * 0.45, 'char_jeongwoo');
-        this.portraitImage.setScale(0.4); // AI 생성 이미지는 큰 사이즈이므로 축소
+        // 초상화 이미지 객체 (512x512 표준 크기 기반)
+        this.portraitImage = this.add.image(width * 0.22, height * 0.48, 'char_jeongwoo');
+        this.portraitImage.setScale(0.45);
         this.portraitImage.setVisible(false);
 
         // 대화상자 UI 디자인
@@ -130,12 +130,12 @@ export default class StoryScene extends Phaser.Scene {
             this.portraitImage.setTexture(data.portrait);
             this.portraitImage.setVisible(true);
 
-            // 간단하게 팝업 애니메이션 효과
-            this.portraitImage.setScale(0.35);
+            // 등장 애니메이션 (표준 0.45 배율로 통일)
+            this.portraitImage.setScale(0.4);
             this.tweens.add({
                 targets: this.portraitImage,
-                scale: 0.4,
-                duration: 200,
+                scale: 0.45,
+                duration: 250,
                 ease: 'Back.easeOut'
             });
         } else {
