@@ -29,8 +29,8 @@ export default class IntroScene extends Phaser.Scene {
         this.bg.setDisplaySize(width, height);
         this.bg.setTint(0x777777); // 인트로 화면은 조금 어둡게
 
-        const titleFontSize = Math.max(40, Math.round(width * 0.11)) + 'px';
-        const titleText = this.add.text(width / 2, height * 0.12, '정우의 낚시 대모험!', {
+        const titleFontSize = Math.max(32, Math.round(width * 0.09)) + 'px';
+        const titleText = this.add.text(width / 2, height * 0.12, '정우의 낚시 대모험 2탄!', {
             fontSize: titleFontSize,
             fontFamily: 'Arial',
             fontStyle: 'bold',
@@ -89,10 +89,12 @@ export default class IntroScene extends Phaser.Scene {
             }).setOrigin(0.5);
         }
 
-        // --- 물고기 기록 (마일스톤) 버튼 (중앙 하단) ---
-        const milestoneBtnSize = width < 360 ? '20px' : '28px'; // Increased font size
-        const milestoneBtn = this.add.text(width / 2, height * 0.85, '🐟 잡은 물고기 기록 보기', {
-            fontSize: milestoneBtnSize,
+        // --- 기능 통합 버튼 리스트 (하단 배치) ---
+        const btnFontSize = width < 360 ? '16px' : '22px';
+
+        // 마일스톤 버튼
+        const milestoneBtn = this.add.text(width / 2, height * 0.80, '🐟 잡은 물고기 기록 보기', {
+            fontSize: btnFontSize,
             fontFamily: 'Arial',
             fontStyle: 'bold',
             color: '#FFFFFF',
@@ -104,7 +106,6 @@ export default class IntroScene extends Phaser.Scene {
             window.gameManagers.uiManager.openFishMilestonePopup(this);
         });
 
-        // 펄스 애니메이션 추가
         this.tweens.add({
             targets: milestoneBtn,
             scale: { from: 1, to: 1.05 },
@@ -112,6 +113,58 @@ export default class IntroScene extends Phaser.Scene {
             yoyo: true,
             repeat: -1
         });
+
+        // 수족관 버튼
+        const aquariumBtn = this.add.text(width / 2, height * 0.87, '🐠 내 수족관 구경가기', {
+            fontSize: btnFontSize,
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            color: '#FFFFFF',
+            backgroundColor: '#00BFFF',
+            padding: { x: 20, y: 12 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        aquariumBtn.on('pointerdown', () => {
+            window.gameManagers.soundManager.playCoin();
+            this.cameras.main.fadeOut(300, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start('AquariumScene');
+            });
+        });
+
+        this.tweens.add({
+            targets: aquariumBtn,
+            scale: { from: 1, to: 1.05 },
+            duration: 800,
+            delay: 400, // 교차 애니메이션
+            yoyo: true,
+            repeat: -1
+        });
+
+        // 이벤트 도감 버튼
+        const eventCardBtn = this.add.text(width / 2, height * 0.94, '🃏 보물섬 이벤트 도감', {
+            fontSize: btnFontSize,
+            fontFamily: 'Arial',
+            fontStyle: 'bold',
+            color: '#FFFFFF',
+            backgroundColor: '#8A2BE2',
+            padding: { x: 20, y: 12 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        eventCardBtn.on('pointerdown', () => {
+            window.gameManagers.soundManager.playCoin();
+            window.gameManagers.uiManager.openEventCardBook();
+        });
+
+        this.tweens.add({
+            targets: eventCardBtn,
+            scale: { from: 1, to: 1.05 },
+            duration: 800,
+            delay: 800,
+            yoyo: true,
+            repeat: -1
+        });
+
 
         // --- 초기화 버튼 (좌측 하단) ---
         const resetBtnSize = width < 360 ? '14px' : '18px';

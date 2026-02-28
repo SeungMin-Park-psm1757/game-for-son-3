@@ -1,4 +1,5 @@
-import { getRandomFish } from '../models/FishData.js';
+import { getRandomFish, FISH_TYPES } from '../models/FishData.js';
+import { BOSS_STORIES, FIRST_CATCH_STORIES } from '../models/StoryData.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -20,16 +21,43 @@ export default class GameScene extends Phaser.Scene {
         this.region = 1;
 
         // --- 구제 시스템 (Fever Time) ---
-        this.consecutiveFails = 0;   // 연속 실패 횟수
-        this.isFeverTime = false;     // 현재 피버 타임 여부
-        this.feverTimeRemaining = 0; // 피버 타임 남은 시간(ms)
+        this.consecutiveFails = 0;
+        this.isFeverTime = false;
+        this.feverTimeRemaining = 0;
 
-        // --- 스플라인 물리 ---
-        this.lineTension = 0; // 0~1 범위, 연타 중 올라감
+        // --- 스플라인 물리 + 줄 텐션/끊김 ---
+        this.lineTension = 0; // 0~1 범위
+
+        // --- 캐스팅 스킬샷 ---
+        this.castingBonus = 1; // 0=빗나감, 1=보통, 2=좋음, 3=완벽
+        this.targetRingX = 0;
+        this.targetRingY = 0;
+
+        // --- 3종 미니게임 ---
+        this.miniGameType = 'mash'; // 'mash', 'timing', 'draw'
+        this.timingBarX = 0;
+        this.timingBarDir = 1;
+        this.timingGreenStart = 0;
+        this.timingGreenEnd = 0;
+        this.timingHits = 0;
+        this.timingRequired = 4;
+        this.drawPath = [];
+        this.drawUserPath = [];
+        this.isDrawing = false;
+
+        // --- 콤보 시스템 ---
+        this.comboCount = 0;
+
+
+
+        // --- 보스 어종 ---
+        this.isBossFight = false;
+        this.bossTimeLimit = 0;
+        this.bossTimer = 0;
+        this.regionFishCount = 0; // 현재 지역 낚시 횟수
     }
 
     init(data) {
-        // IntroScene에서 넘어온 region 데이터 받기
         this.region = (data && data.region) ? data.region : 1;
 
         // 씬 재시작 시 상태 완전 초기화
@@ -47,9 +75,31 @@ export default class GameScene extends Phaser.Scene {
         this.feverTimeRemaining = 0;
         this.lineTension = 0;
         this.wanderingFishes = [];
+        this.castingBonus = 1;
+        this.miniGameType = 'mash';
+        this.timingBarX = 0;
+        this.timingHits = 0;
+        this.drawPath = [];
+        this.drawUserPath = [];
+        this.isDrawing = false;
+
+        this.isBossFight = false;
+        this.bossTimeLimit = 0;
+        this.bossTimer = 0;
+        this.regionFishCount = 0;
     }
 
     create() {
+        // --- 0. 전역 데이터 초기화 (에러 방지용) ---
+        if (!window.gameManagers.fishData) {
+            window.gameManagers.fishData = {
+                region1: FISH_TYPES.filter(f => f.region === 1),
+                region2: FISH_TYPES.filter(f => f.region === 2),
+                region3: FISH_TYPES.filter(f => f.region === 3),
+                region4: FISH_TYPES.filter(f => f.region === 4)
+            };
+        }
+
         // --- 1. 배경 및 화면 셋업 ---
         const width = this.scale.width;
         const height = this.scale.height;
@@ -78,37 +128,68 @@ export default class GameScene extends Phaser.Scene {
         // 현재 챕터 목표 표시 UI
         this.updateGoalText();
 
-        // 피버 타임 텍스트 (화면 중앙 상단에 숨겨둠)
-        this.uiElements.feverText = this.add.text(width / 2, height * 0.25, '🔥 FEVER TIME! 🔥', {
+        // 지역별 UI 및 캐릭터 위치 설정 (캐릭터가 위에 있으면 UI는 아래로)
+        const uiTop = this.region < 3;
+        const feverY = height * (uiTop ? 0.25 : 0.78);
+        const gaugeY = height * (uiTop ? 0.18 : 0.85);
+        const tensionY = height * (uiTop ? 0.22 : 0.81);
+        const tensionWarnY = height * (uiTop ? 0.26 : 0.77);
+
+        // 피버 타임 텍스트
+        this.uiElements.feverText = this.add.text(width / 2, feverY, '🔥 FEVER TIME! 🔥', {
             fontSize: '40px', fontFamily: 'Arial', color: '#FF4500',
             stroke: '#FFD700', strokeThickness: 6
         }).setOrigin(0.5).setDepth(20).setVisible(false);
 
-        // 연타 게이지바 (배경, 게이지) - 초기엔 숨김
+        // 보스 타이머 텍스트
+        this.uiElements.bossTimerText = this.add.text(width / 2, gaugeY - 40, '마왕 제한시간: 15초', {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FF0000',
+            stroke: '#FFFFFF', strokeThickness: 4, fontStyle: 'bold'
+        }).setOrigin(0.5).setDepth(20).setVisible(false);
+
+        // 연타 게이지바 (배경, 게이지)
         const gaugeWidth = Math.min(400, Math.round(width * 0.88));
         this.gaugeWidth = gaugeWidth;
-        this.uiElements.gaugeBg = this.add.rectangle(width / 2, height * 0.18, gaugeWidth, 40, 0x333333).setDepth(10).setVisible(false);
-        this.uiElements.gaugeBar = this.add.rectangle(width / 2 - gaugeWidth / 2, height * 0.18, 0, 40, 0x00FF00).setOrigin(0, 0.5).setDepth(11).setVisible(false);
+        this.uiElements.gaugeBg = this.add.rectangle(width / 2, gaugeY, gaugeWidth, 40, 0x333333).setDepth(10).setVisible(false);
+        this.uiElements.gaugeBar = this.add.rectangle(width / 2 - gaugeWidth / 2, gaugeY, 0, 40, 0x00FF00).setOrigin(0, 0.5).setDepth(11).setVisible(false);
 
-        // 캐릭터 렌더링 (하단 선착장에 위치)
-        // 지역마다 캐릭터가 조금 더 앞/뒤에 설 수 있게 조정 (임시)
+        // --- 줄 텐션 경고 바 ---
+        this.uiElements.tensionBg = this.add.rectangle(width / 2, tensionY, gaugeWidth, 16, 0x333333).setDepth(10).setVisible(false);
+        this.uiElements.tensionBar = this.add.rectangle(width / 2 - gaugeWidth / 2, tensionY, 0, 16, 0xff4444).setOrigin(0, 0.5).setDepth(11).setVisible(false);
+        this.uiElements.tensionWarn = this.add.text(width / 2, tensionWarnY, '', {
+            fontSize: '20px', fontFamily: 'Arial', color: '#FF0000', stroke: '#000', strokeThickness: 3
+        }).setOrigin(0.5).setDepth(12).setVisible(false);
+
+        // --- 콤보 카운터 ---
+        this.uiElements.comboText = this.add.text(width - 20, height * 0.12, '', {
+            fontSize: '24px', fontFamily: 'Arial', color: '#FF4500', stroke: '#000', strokeThickness: 4, fontStyle: 'bold'
+        }).setOrigin(1, 0.5).setDepth(20).setVisible(false);
+
+        // 캐릭터 렌더링
         let charY = height * 0.8;
         if (this.region === 1) charY = height * 0.85; // 민물 (아래 얕은 물가)
         else if (this.region === 2) charY = height * 0.75; // 연안 (중하단 갯바위)
-        else if (this.region === 3) charY = height * 0.55; // 먼 바다 (상단-중앙 배 위)
-        else if (this.region === 4) charY = height * 0.45; // 보물섬 (상단-중앙 섬 위)
+        else if (this.region === 3) charY = height * 0.20; // 먼 바다 (배 위)
+        else if (this.region === 4) charY = height * 0.23; // 보물섬 (섬 위)
 
         const charTexture = this.getCharacterTextureKey();
-        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3).setScale(1.26);
+        this.character = this.add.image(width / 2, charY, charTexture).setDepth(3);
+
+        // 캐릭터 크기 동적 조절 (이전 128px * 1.26 = 161px)
+        const targetCharSize = 160;
+        const charScale = targetCharSize / this.character.width;
+        this.character.setScale(charScale);
+        this.character.setData('baseScale', charScale);
 
         this.fishingLine = this.add.graphics();
-        this.fishingLine.setDepth(1); // 찌(2) 아래, 물고기(1)와 동일선상 (물 위)
+        this.fishingLine.setDepth(1);
 
         // 찌 (Lure) 스프라이트 - 초기 숨김
         this.lure = this.add.image(0, 0, 'lure').setVisible(false).setDepth(2);
-        this.lure.setScale(0.129); // 루어 크기 3배 확대 (기존 0.043 기준)
+        const targetLureSize = 24;
+        this.lure.setScale(targetLureSize / this.lure.width);
 
-        // 물고기 (Fish) 스프라이트 - 초기 숨김 (나중에 텍스처 변경)
+        // 물고기 (Fish) 스프라이트 - 초기 숨김
         this.fish = this.add.image(0, 0, 'fish_pirami').setVisible(false).setDepth(1);
 
         // 큰 느낌표 텍스트 (입질용)
@@ -116,28 +197,19 @@ export default class GameScene extends Phaser.Scene {
             fontSize: '120px', fontFamily: 'Arial', color: '#FFFF00', stroke: '#FF0000', strokeThickness: 10
         }).setOrigin(0.5).setVisible(false).setDepth(5);
 
-        // --- 수면 과녁 힌트 (IDLE 상태에서 깜빡거림) ---
-        this.uiElements.targetHint = this.add.circle(width / 2, height * 0.7, 30, 0xffffff, 0)
-            .setStrokeStyle(3, 0xffffff, 0.6).setDepth(4).setVisible(true);
-        this.uiElements.targetHintInner = this.add.circle(width / 2, height * 0.7, 10, 0xffffff, 0)
-            .setStrokeStyle(2, 0xffffff, 0.6).setDepth(4).setVisible(true);
-        this.tweens.add({
-            targets: [this.uiElements.targetHint, this.uiElements.targetHintInner],
-            alpha: { from: 0.3, to: 1 },
-            scaleX: { from: 0.8, to: 1.2 },
-            scaleY: { from: 0.8, to: 1.2 },
-            yoyo: true, repeat: -1, duration: 800, ease: 'Sine.easeInOut'
-        });
+        // --- 캐스팅 스킬샷: 2~3개의 다앙햔 과녁 ---
+        this.targetRings = []; // 과녁들을 저장할 배열
+        this.repositionTargetRing();
 
-        // --- 뒤로 가기 버튼 (좌측 상단) ---
+        // 뒤로 가기 버튼 (위치 하향 조정: 24, 80 - 모바일 노치 회피)
         const backBtnFontSize = width < 360 ? '16px' : '20px';
-        const backBtn = this.add.text(10, 10, '⬅️ 뒤로 가기', {
+        const backBtn = this.add.text(24, 80, '⬅️ 뒤로 가기', {
             fontSize: backBtnFontSize,
             fontFamily: 'Arial', color: '#FFFFFF',
-            stroke: '#000000', strokeThickness: 3,
-            backgroundColor: '#444444',
-            padding: { x: 8, y: 5 }
-        }).setDepth(20).setInteractive({ useHandCursor: true });
+            stroke: '#000000', strokeThickness: 4,
+            backgroundColor: '#222222',
+            padding: { x: 10, y: 6 }
+        }).setDepth(30).setInteractive({ useHandCursor: true });
 
         backBtn.on('pointerover', () => backBtn.setBackgroundColor('#666666'));
         backBtn.on('pointerout', () => backBtn.setBackgroundColor('#444444'));
@@ -148,7 +220,7 @@ export default class GameScene extends Phaser.Scene {
             this.scene.start('IntroScene');
         });
 
-        // --- 2. 입력 이벤트 핸들러 (강화된 디바운스 적용) ---
+        // --- 2. 입력 이벤트 핸들러 (연타, 드래그, 홀드 등) ---
         this.input.on('pointerdown', (pointer) => {
             const now = this.time.now;
             if (this.gameState === 'CATCH') {
@@ -158,6 +230,14 @@ export default class GameScene extends Phaser.Scene {
             }
             this.lastActionTime = now;
             this.handlePointerDown(pointer);
+        });
+
+        this.input.on('pointermove', (pointer) => {
+            this.handlePointerMove(pointer);
+        });
+
+        this.input.on('pointerup', (pointer) => {
+            this.handlePointerUp(pointer);
         });
 
         console.log("GameScene Initialized with Core Loops");
@@ -173,10 +253,13 @@ export default class GameScene extends Phaser.Scene {
             const newTexture = this.getCharacterTextureKey();
             this.character.setTexture(newTexture);
 
-            // 시각적 피드백 (반짝임) - 크기가 1.26배이므로 맞춰서 수정
+            // 시각적 피드백 (반짝임) - 크기가 동적이므로 변수 사용
+            const baseScale = this.character.getData('baseScale') || (160 / this.character.width);
+            this.character.setData('baseScale', baseScale);
+
             this.tweens.add({
                 targets: this.character,
-                scale: { from: 1.26, to: 1.092 },
+                scale: { from: baseScale, to: baseScale * 0.86 },
                 duration: 300,
                 ease: 'Bounce.easeOut'
             });
@@ -230,9 +313,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     handlePointerDown(pointer) {
-        // [Phase 1: Approach-Lure] 바다를 클릭하여 찌 던지기
         if (this.gameState === 'IDLE') {
-            // 지역별 낚시 가능 영역 (더 넓게 조정 — 화면 상단 30% 이하면 어디든 던질 수 있음)
             let clickableLimitY;
             if (this.region === 1) clickableLimitY = this.scale.height * 0.3;
             else if (this.region === 2) clickableLimitY = this.scale.height * 0.3;
@@ -244,32 +325,114 @@ export default class GameScene extends Phaser.Scene {
                 this.uiElements.instruction.setText('물 쪽을 클릭하세요!');
                 this.time.delayedCall(1500, () => {
                     if (this.gameState === 'IDLE') {
-                        const regionNames = { 1: "민물", 2: "연안", 3: "먼 바다" };
+                        const regionNames = { 1: "민물", 2: "연안", 3: "먼 바다", 4: "보물섬" };
                         this.uiElements.instruction.setText(`${regionNames[this.region]}을 탭(클릭)해서 찌를 던지세요!`);
                     }
                 });
             }
         }
-        // [Phase 2: Bite] 입질이 왔을 때 클릭해서 챔질(Catch) 시작
         else if (this.gameState === 'BITE') {
             this.startCatch();
         }
-        // [Phase 3: Catch] 버튼 연타
         else if (this.gameState === 'CATCH') {
-            this.mashButton();
+            this.handleCatchInput(pointer);
         }
     }
 
-    // --- Phase 1: 찌 던지기 (Approach) ---
+    // --- 캐스팅 스킬샷: 과녁 위치 랜덤 재배치 ---
+    repositionTargetRing() {
+        const w = this.scale ? this.scale.width : 720;
+        const h = this.scale ? this.scale.height : 1280;
+        const targetScale = (window.gameManagers.playerModel.stats.focusRing || 1) / 3;
+        const outerRadius = 90 * targetScale;
+
+        // 기존 과녁들 삭제
+        if (this.targetRings) {
+            this.targetRings.forEach(ringObj => {
+                ringObj.outer.destroy();
+                ringObj.mid.destroy();
+                ringObj.inner.destroy();
+                if (ringObj.highlight) ringObj.highlight.destroy();
+            });
+            this.tweens.killTweensOf(this.targetRings.map(r => [r.outer, r.mid, r.inner, r.highlight]).flat().filter(Boolean));
+        }
+        this.targetRings = [];
+
+        const numTargets = Phaser.Math.Between(2, 3);
+
+        for (let i = 0; i < numTargets; i++) {
+            let tx = Phaser.Math.Between(Math.round(w * 0.15), Math.round(w * 0.85));
+            let ty = Phaser.Math.Between(Math.round(h * 0.35), Math.round(h * 0.65));
+
+            tx = Phaser.Math.Clamp(tx, outerRadius, w - outerRadius);
+            ty = Phaser.Math.Clamp(ty, outerRadius + 100, h - outerRadius);
+
+            const outer = this.add.circle(tx, ty, outerRadius, 0xffffff, 0)
+                .setStrokeStyle(2, 0xffffff, 0.4).setDepth(4);
+            const mid = this.add.circle(tx, ty, 60 * targetScale, 0xffffff, 0)
+                .setStrokeStyle(2, 0x87ceeb, 0.5).setDepth(4);
+            const inner = this.add.circle(tx, ty, 30 * targetScale, 0xffffff, 0)
+                .setStrokeStyle(3, 0xffd700, 0.7).setDepth(4);
+
+            this.targetRings.push({
+                x: tx, y: ty,
+                outer: outer, mid: mid, inner: inner
+            });
+
+            this.tweens.add({
+                targets: [outer, mid, inner],
+                scaleX: { from: 0.85, to: 1.15 },
+                scaleY: { from: 0.85, to: 1.15 },
+                alpha: { from: 0.4, to: 1 },
+                yoyo: true, repeat: -1, duration: 900, ease: 'Sine.easeInOut'
+            });
+        }
+    }
+
+    // --- Phase 1: 찌 던지기 (Approach) + 스킬샷 판정 ---
     startApproach(targetX, targetY) {
         this.gameState = 'APPROACH';
-        this.uiElements.instruction.setText('기다리는 중...');
+        this.regionFishCount++;
 
-        // 과녁 힌트 숨기기
-        this.uiElements.targetHint.setVisible(false);
-        this.uiElements.targetHintInner.setVisible(false);
+        // --- 캐스팅 스킬샷 판정 (가장 가까운 과녁 찾기) ---
+        const targetScale = (window.gameManagers.playerModel.stats.focusRing || 1) / 3;
+        let closestRing = null;
+        let minDist = Infinity;
 
-        // 찌를 클릭한 위치로 표시 시작 (애니메이션 시작 지점 = 캐릭터 낚싯대 끝부분)
+        this.targetRings.forEach(ring => {
+            const d = Phaser.Math.Distance.Between(targetX, targetY, ring.x, ring.y);
+            if (d < minDist) {
+                minDist = d;
+                closestRing = ring;
+            }
+        });
+
+        // 결과 배율 제거됨
+        this.castingMultiplier = 1;
+
+        if (closestRing && minDist <= 30 * targetScale) {
+            this.castingBonus = 3; // 완벽
+            this.uiElements.instruction.setText(`✨ 완벽한 캐스팅! ✨`);
+            this.cameras.main.flash(200, 255, 215, 0);
+        } else if (closestRing && minDist <= 60 * targetScale) {
+            this.castingBonus = 2; // 좋음
+            this.uiElements.instruction.setText(`🎯 좋은 캐스팅!`);
+        } else if (closestRing && minDist <= 90 * targetScale) {
+            this.castingBonus = 1; // 보통
+            this.uiElements.instruction.setText('기다리는 중...');
+        } else {
+            this.castingBonus = 0; // 빗나감
+            this.castingMultiplier = 1; // 빗나가면 배율 없음
+            this.uiElements.instruction.setText('빗나갔어... 작은 물고기가 많을지도?');
+        }
+
+        // 과녁 숨기기
+        this.targetRings.forEach(ring => {
+            ring.outer.setVisible(false);
+            ring.mid.setVisible(false);
+            ring.inner.setVisible(false);
+        });
+
         this.lure.setPosition(this.character.x, this.character.y - 10);
         this.lure.setVisible(true);
 
@@ -291,12 +454,33 @@ export default class GameScene extends Phaser.Scene {
     waitForBite(lureX, lureY) {
         const chanceLevel = window.gameManagers.playerModel.stats.catchChance;
         const baseMaxWait = this.region === 4 ? 5000 : 4000;
-        const maxWait = Math.max(1000, baseMaxWait - (chanceLevel * 200));
-        const waitTime = Phaser.Math.Between(1000, maxWait);
+        let maxWait = Math.max(1000, baseMaxWait - (chanceLevel * 200));
 
-        // 물고기 종류 결정 (Rod Luck 적용)
-        const rodLuckLevel = window.gameManagers.playerModel.stats.rodLuck;
-        this.currentFish = getRandomFish(rodLuckLevel, this.region);
+        // 캐스팅 보너스: 입질 대기시간 단축
+        if (this.castingBonus === 3) maxWait = Math.max(800, maxWait * 0.5);
+        else if (this.castingBonus === 2) maxWait = Math.max(900, maxWait * 0.75);
+
+        const waitTime = Phaser.Math.Between(800, maxWait);
+
+        const pm = window.gameManagers.playerModel;
+
+        // --- 10% 확률로 보스(마왕) 출현 (지역당 5회 낚시 이후 + 아직 안 잡았을 때) ---
+        if (this.regionFishCount >= 5 && Math.random() < 0.1 && !pm.bossDefeated[this.region]) {
+            this.isBossFight = true;
+            const regionList = FISH_TYPES.filter(f => f.region === this.region);
+            const ssrFishes = regionList.filter(f => f.grade === 'SSR');
+            this.currentFish = ssrFishes.length > 0 ? ssrFishes[0] : regionList[regionList.length - 1];
+            this.uiElements.instruction.setText('🚨 마왕 출현 경고! 🚨\n시간 내에 잡아라!!');
+            this.cameras.main.shake(1500, 0.02);
+            this.cameras.main.flash(500, 255, 0, 0);
+            window.gameManagers.soundManager.playError(); // 씬 진입 경고음
+        } else {
+            this.isBossFight = false;
+            // 물고기 종류 결정 (캐스팅 보너스 + 콤보 적용)
+            const rodLuckLevel = pm.stats.rodLuck;
+            const comboCount = pm.comboCount || 0;
+            this.currentFish = getRandomFish(rodLuckLevel, this.region, this.castingBonus, comboCount);
+        }
 
         // --- 3~5마리 물고기 접근 연출 ---
         this.approachFishes = [];
@@ -479,82 +663,312 @@ export default class GameScene extends Phaser.Scene {
         });
     }
 
-    // --- Phase 3: 잡기 (Catch - 연타) ---
+    activateFeverTime() {
+        this.isFeverTime = true;
+        this.catchMax = Math.max(10, this.catchMax * 0.5); // 잡기 더 쉽게 (체력 절반)
+        this.cameras.main.setBackgroundColor('#4a0000'); // 배경 약간 붉은 피버 연출
+
+        // 피버타임 알림 텍스트 효과
+        const feverText = this.add.text(this.scale.width / 2, this.scale.height * 0.3, '🔥 피버 타임! 낚시가 쉬워집니다! 🔥', {
+            fontSize: '36px', fontFamily: 'Arial', color: '#FF4500', stroke: '#FFFFFF', strokeThickness: 4
+        }).setOrigin(0.5).setDepth(100);
+
+        this.tweens.add({
+            targets: feverText,
+            scale: { from: 1.5, to: 1 },
+            duration: 500,
+            yoyo: true,
+            hold: 1500,
+            onComplete: () => feverText.destroy()
+        });
+    }
+
+    endFeverTime() {
+        this.isFeverTime = false;
+        this.consecutiveFails = 0;
+        this.cameras.main.setBackgroundColor('#2c3e50'); // 원래 배경으로 복구
+    }
+
+    // --- Phase 3: 잡기 (Catch) - 3종 미니게임 랜덤 ---
     startCatch() {
         this.gameState = 'CATCH';
         this.lineTension = 0;
+        this.catchGraceTimer = 300; // 0.3초 게이지 하락 무적 시간
 
-        // 물고기 등급별로 Catch Max(체력)가 다름
         this.catchMax = this.currentFish.catchMax || 100;
-        this.catchGauge = this.catchMax * 0.15; // 초기 게이지 15% 제공
+        this.catchGauge = this.catchMax * 0.15;
+
+        if (this.isBossFight) {
+            this.catchMax *= 3; // 보스 catchMax ×3
+            this.bossTimeLimit = 15; // 15초 제한
+            this.bossTimer = 0;
+            const pm = window.gameManagers.playerModel;
+            if (pm.bossFailed[this.region]) {
+                // 이전 실패 보너스 (힌트/학습 효과)
+                this.catchGauge = this.catchMax * 0.3; // 30%에서 시작
+            }
+            // 보스 타이머 UI 초기화 및 숨김 (update에서 다시 표시)
+            if (this.uiElements.bossTimerText) this.uiElements.bossTimerText.setVisible(false);
+        }
 
         // --- Fever Time 적용 체크 ---
         if (this.consecutiveFails >= 3) {
             this.activateFeverTime();
         }
 
-        this.uiElements.instruction.setText('화면을 마구 연타하세요!!!');
+        // --- 미니게임 임시 중단, 연타로 단일화 ---
+        this.miniGameType = 'mash';
+
+        if (this.miniGameType === 'timing') {
+            this.uiElements.instruction.setText('초록 구간에서 탭하세요!');
+            this.timingHits = 0;
+            this.timingRequired = Phaser.Math.Between(3, 5);
+            const gw = this.gaugeWidth || 400;
+            // 초록 구간 위치 (30~70% 사이 랜덤, 폭 20%)
+            this.timingGreenStart = Phaser.Math.FloatBetween(0.3, 0.6);
+            this.timingGreenEnd = this.timingGreenStart + 0.15;
+            this.timingBarX = 0;
+            this.timingBarDir = 1;
+        } else if (this.miniGameType === 'draw') {
+            this.uiElements.instruction.setText('나타나는 모양을 따라 그리세요!');
+            this.drawUserPath = [];
+            this.isDrawing = false;
+            this.generateDrawPath();
+
+        } else {
+            this.uiElements.instruction.setText('화면을 마구 클릭하세요!!!');
+        }
 
         // 기존 이펙트 정리
         this.tweens.killTweensOf(this.uiElements.exclamation);
         this.tweens.killTweensOf(this.lure);
         this.uiElements.exclamation.setVisible(false);
-        // 접근 물고기들 정리
         this.clearApproachFishes();
-        // CATCH 단계에서는 찌를 다시 보이게 (스플라인 연출용)
+        // CATCH 단계 초기화
+        this.clearApproachFishes();
         this.lure.setVisible(true);
         this.fish.setVisible(false);
+
+        // 그리기 미니게임 그래픽 준비
+        if (!this.drawGraphics) {
+            this.drawGraphics = this.add.graphics().setDepth(15);
+        }
+        if (!this.drawUserGraphics) {
+            this.drawUserGraphics = this.add.graphics().setDepth(16);
+        }
+        this.drawGraphics.clear();
+        this.drawUserGraphics.clear();
+
+        if (this.miniGameType === 'draw' && this.drawPath) {
+            this.drawGraphics.lineStyle(6, 0xaaaaaa, 0.5);
+            this.drawGraphics.beginPath();
+            this.drawGraphics.moveTo(this.drawPath[0].x, this.drawPath[0].y);
+            for (let i = 1; i < this.drawPath.length; i++) {
+                this.drawGraphics.lineTo(this.drawPath[i].x, this.drawPath[i].y);
+            }
+            this.drawGraphics.strokePath();
+
+            // 점선 힌트용 파티클 또는 마커
+            this.drawGraphics.fillStyle(0xffff00, 1);
+            this.drawGraphics.fillCircle(this.drawPath[0].x, this.drawPath[0].y, 8);
+        }
 
         // 게이지 UI 표시
         this.uiElements.gaugeBg.setVisible(true);
         this.uiElements.gaugeBar.setVisible(true);
+        // 텐션 UI 우선 중단에 따른 숨김 처리
+        if (false) { // 기존 텐션 표시 영역은 무시
+            this.uiElements.tensionBg.setVisible(true);
+            this.uiElements.tensionBar.setVisible(true);
+            this.uiElements.tensionWarn.setVisible(true);
+        }
         this.updateGaugeUI();
 
-        // 카메라 줌인 효과 (몰입감)
         this.cameras.main.zoomTo(1.1, 300);
     }
 
-    activateFeverTime() {
-        this.isFeverTime = true;
-        this.feverTimeRemaining = 5000; // 5초
-        this.consecutiveFails = 0;
-
-        // UI 표시
-        this.uiElements.feverText.setVisible(true);
-        this.tweens.add({
-            targets: this.uiElements.feverText,
-            scale: { from: 0.5, to: 1.3 },
-            yoyo: true,
-            repeat: -1,
-            duration: 300
-        });
-
-        // 화면 플래시 + 사운드
-        this.cameras.main.flash(500, 255, 100, 0);
-        window.gameManagers.soundManager.playSuccess();
+    // 따라 그리기 경로 생성
+    generateDrawPath() {
+        this.drawPath = [];
+        const cx = this.scale.width / 2;
+        const cy = this.scale.height * 0.5;
+        const type = Math.random() > 0.5 ? 'circle' : 'line';
+        if (type === 'circle') {
+            const r = 60;
+            for (let i = 0; i <= 20; i++) {
+                const angle = (i / 20) * Math.PI * 2;
+                this.drawPath.push({ x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r });
+            }
+        } else {
+            // 직선 (좌->우 또는 대각선)
+            const startX = cx - 80;
+            const endX = cx + 80;
+            const startY = cy - 30;
+            const endY = cy + 30;
+            for (let i = 0; i <= 10; i++) {
+                const t = i / 10;
+                this.drawPath.push({ x: startX + (endX - startX) * t, y: startY + (endY - startY) * t, });
+            }
+        }
     }
 
-    endFeverTime() {
-        this.isFeverTime = false;
-        this.feverTimeRemaining = 0;
-        this.tweens.killTweensOf(this.uiElements.feverText);
-        this.uiElements.feverText.setVisible(false);
+    // --- CATCH 상태 입력 핸들러 (미니게임별 분기) ---
+    handleCatchInput(pointer) {
+        if (this.miniGameType === 'timing') {
+            this.handleTimingTap();
+        } else if (this.miniGameType === 'draw') {
+            this.isDrawing = true;
+            this.drawUserPath = [{ x: pointer.x, y: pointer.y }];
+            this.drawUserGraphics.clear();
+            this.drawUserGraphics.lineStyle(8, 0x00ff00, 1);
+            this.drawUserGraphics.beginPath();
+            this.drawUserGraphics.moveTo(pointer.x, pointer.y);
+
+        } else {
+            this.mashButton();
+        }
+    }
+
+    handlePointerMove(pointer) {
+        if (this.gameState === 'CATCH' && this.miniGameType === 'draw' && this.isDrawing) {
+            this.drawUserPath.push({ x: pointer.x, y: pointer.y });
+            this.drawUserGraphics.lineTo(pointer.x, pointer.y);
+            this.drawUserGraphics.strokePath();
+        }
+    }
+
+    handlePointerUp(pointer) {
+        if (this.gameState === 'CATCH') {
+
+            this.isDrawing = false;
+            this.evaluateDraw();
+        }
+    }
+
+    evaluateDraw() {
+        if (!this.drawPath || this.drawPath.length === 0 || !this.drawUserPath || this.drawUserPath.length < 5) {
+            this.catchGauge -= this.catchMax * 0.1;
+            window.gameManagers.soundManager.playError();
+            this.cameras.main.shake(100, 0.01);
+            this.generateDrawPath(); // 다시 그리기
+            this.startCatchGraphicsForDraw();
+            return;
+        }
+
+        // 단순 매칭 평가: 사용자의 선 길이와 시작/끝점이 가이드에 얼마나 일치하는지
+        let score = 0;
+        const targetStart = this.drawPath[0];
+        const targetEnd = this.drawPath[this.drawPath.length - 1];
+
+        const userStart = this.drawUserPath[0];
+        const userEnd = this.drawUserPath[this.drawUserPath.length - 1];
+
+        const startDist = Phaser.Math.Distance.Between(targetStart.x, targetStart.y, userStart.x, userStart.y);
+        const endDist1 = Phaser.Math.Distance.Between(targetEnd.x, targetEnd.y, userEnd.x, userEnd.y);
+        const endDist2 = Phaser.Math.Distance.Between(targetStart.x, targetStart.y, userEnd.x, userEnd.y); // 반대로 그렸을 경우
+
+        // 허용 반경 내에 있나
+        if (startDist < 60 && Math.min(endDist1, endDist2) < 60) {
+            score = 100;
+        }
+
+        if (score > 50) {
+            // 성공
+            const progress = this.catchMax / 3; // 3번 그리면 성공하도록
+            this.catchGauge += progress;
+            window.gameManagers.soundManager.playSuccess();
+            this.cameras.main.flash(100, 0, 255, 0);
+        } else {
+            // 실패
+            this.catchGauge -= this.catchMax * 0.08;
+            window.gameManagers.soundManager.playError();
+            this.cameras.main.shake(100, 0.01);
+        }
+
+        this.updateGaugeUI();
+        if (this.catchGauge >= this.catchMax) {
+            this.successFishing();
+            if (this.drawGraphics) this.drawGraphics.clear();
+            if (this.drawUserGraphics) this.drawUserGraphics.clear();
+        } else if (this.catchGauge <= 0) {
+            this.catchGauge = 0;
+            this.failFishing('모양이 너무 달라요...');
+            if (this.drawGraphics) this.drawGraphics.clear();
+            if (this.drawUserGraphics) this.drawUserGraphics.clear();
+        } else {
+            // 다음 문제
+            this.generateDrawPath();
+            this.startCatchGraphicsForDraw();
+        }
+    }
+
+    startCatchGraphicsForDraw() {
+        this.drawGraphics.clear();
+        this.drawUserGraphics.clear();
+        if (this.drawPath) {
+            this.drawGraphics.lineStyle(6, 0xaaaaaa, 0.5);
+            this.drawGraphics.beginPath();
+            this.drawGraphics.moveTo(this.drawPath[0].x, this.drawPath[0].y);
+            for (let i = 1; i < this.drawPath.length; i++) {
+                this.drawGraphics.lineTo(this.drawPath[i].x, this.drawPath[i].y);
+            }
+            this.drawGraphics.strokePath();
+            this.drawGraphics.fillStyle(0xffff00, 1);
+            this.drawGraphics.fillCircle(this.drawPath[0].x, this.drawPath[0].y, 8);
+        }
+    }
+
+    // 타이밍 탭 미니게임 처리
+    handleTimingTap() {
+        const pos = this.timingBarX; // 0~1 범위
+        const inGreen = pos >= this.timingGreenStart && pos <= this.timingGreenEnd;
+
+        if (inGreen) {
+            this.timingHits++;
+            const progress = this.catchMax / this.timingRequired;
+            this.catchGauge += progress;
+            this.cameras.main.flash(100, 0, 255, 0);
+            window.gameManagers.soundManager.playSuccess();
+
+            // 새 초록 구간 랜덤 재배치
+            this.timingGreenStart = Phaser.Math.FloatBetween(0.2, 0.65);
+            this.timingGreenEnd = this.timingGreenStart + 0.15;
+        } else {
+            this.catchGauge -= this.catchMax * 0.08;
+            this.cameras.main.shake(100, 0.01);
+            window.gameManagers.soundManager.playError();
+        }
+
+        this.updateGaugeUI();
+        if (this.catchGauge >= this.catchMax) this.successFishing();
+        else if (this.catchGauge <= 0) { this.catchGauge = 0; this.failFishing('타이밍을 놓쳤어...'); }
     }
 
     mashButton() {
-        // --- 새 수식: Progress = (RodPower * ReelSpeed) / FishDifficulty ---
         const powerLevel = window.gameManagers.playerModel.stats.rodPower;
         const reelLevel = window.gameManagers.playerModel.stats.reelSpeed;
         const fishDifficulty = this.currentFish.difficulty || 1.0;
 
-        // 기본 진행도 = (rodPower * reelSpeed) / difficulty, 최소 5
         const progress = Math.max(5, (powerLevel * reelLevel) / fishDifficulty);
         this.catchGauge += progress;
 
-        // 장력(Tension) 증가 (스플라인용)
-        this.lineTension = Phaser.Math.Clamp(this.lineTension + 0.15, 0, 1);
+        // --- 줄 텐션 증가 임시 중단 ---
+        // this.lineTension = Phaser.Math.Clamp(this.lineTension + 0.12, 0, 1);
 
-        // 타격감: 화면 미세 흔들림 (Redundant Feedback)
+        // --- 줄 끊김 판정 임시 중단 ---
+        // const safeLimit = this.getTensionSafeLimit();
+        // if (this.lineTension >= 0.95) {
+        //     // 줄 끊김!
+        //     this.cameras.main.shake(300, 0.03);
+        //     this.failFishing('앗! 줄이 끊어졌어요! 너무 세게 당겼나봐요...');
+        //     return;
+        // } else if (this.lineTension >= safeLimit) {
+        //     this.uiElements.tensionWarn.setText('⚠️ 너무 세게! 줄이 끊어질 것 같아!');
+        //     this.uiElements.tensionWarn.setVisible(true);
+        // } else {
+        //     this.uiElements.tensionWarn.setText('');
+        // }
+
         this.cameras.main.shake(100, 0.005);
         window.gameManagers.soundManager.playTapping();
 
@@ -565,14 +979,31 @@ export default class GameScene extends Phaser.Scene {
         }
     }
 
+    // 어종별 텐션 안전 한계
+    getTensionSafeLimit() {
+        const grade = this.currentFish ? this.currentFish.grade : 'N';
+        if (grade === 'SSR') return 0.75;
+        if (grade === 'SR') return 0.80;
+        if (grade === 'R') return 0.85;
+        return 0.90; // N
+    }
+
     updateGaugeUI() {
         const gaugeWidth = this.gaugeWidth || 400;
         const widthPercent = Phaser.Math.Clamp(this.catchGauge / this.catchMax, 0, 1);
         this.uiElements.gaugeBar.width = gaugeWidth * widthPercent;
 
-        // 색상 변화 피드백 (주황 -> 초록)
         if (widthPercent < 0.5) this.uiElements.gaugeBar.fillColor = 0xFFA500;
         else this.uiElements.gaugeBar.fillColor = 0x00FF00;
+
+        // 텐션 바 업데이트
+        if (this.uiElements.tensionBar && this.uiElements.tensionBar.visible) {
+            this.uiElements.tensionBar.width = gaugeWidth * this.lineTension;
+            const safeLimit = this.getTensionSafeLimit();
+            if (this.lineTension >= safeLimit) this.uiElements.tensionBar.fillColor = 0xff0000;
+            else if (this.lineTension >= safeLimit * 0.7) this.uiElements.tensionBar.fillColor = 0xff8800;
+            else this.uiElements.tensionBar.fillColor = 0xffcc00;
+        }
     }
 
     successFishing() {
@@ -580,19 +1011,56 @@ export default class GameScene extends Phaser.Scene {
         this.cameras.main.zoomTo(1, 300);
         this.uiElements.gaugeBg.setVisible(false);
         this.uiElements.gaugeBar.setVisible(false);
+        this.uiElements.tensionBg.setVisible(false);
+        this.uiElements.tensionBar.setVisible(false);
+        this.uiElements.tensionWarn.setVisible(false);
         this.lure.setVisible(false);
         this.lineTension = 0;
+
+
+        // 보스 타이머 숨김
+        if (this.uiElements.bossTimerText) this.uiElements.bossTimerText.setVisible(false);
 
         // 피버 타임 해제
         if (this.isFeverTime) this.endFeverTime();
 
-        // 연속 실패 초기화 (성공했으므로)
+        // 연속 실패 초기화 + 콤보 증가
         this.consecutiveFails = 0;
+        window.gameManagers.playerModel.comboCount = (window.gameManagers.playerModel.comboCount || 0) + 1;
+        const combo = window.gameManagers.playerModel.comboCount;
+
+        // 보스전 승리 처리
+        const pm = window.gameManagers.playerModel;
+        let isBossCatch = false;
+        if (this.isBossFight) {
+            pm.bossDefeated[this.region] = true;
+            pm.bossDefeatedCount[this.region] = (pm.bossDefeatedCount[this.region] || 0) + 1;
+            pm.notify();
+            this.isBossFight = false;
+            isBossCatch = true;
+        }
+
+        // 콤보 UI 표시
+        if (combo >= 2) {
+            this.uiElements.comboText.setText(`🔥 콤보 x${combo}!`);
+            this.uiElements.comboText.setVisible(true);
+            this.tweens.add({
+                targets: this.uiElements.comboText,
+                scale: { from: 1.5, to: 1 },
+                duration: 300,
+                ease: 'Back.easeOut'
+            });
+        }
 
         // 화려한 피드백 (화면 흔들림 크게 + 텍스트)
         this.cameras.main.shake(300, 0.02);
         this.cameras.main.flash(500, 255, 255, 255);
         window.gameManagers.soundManager.playSuccess();
+
+        // 마일스톤 진동 (모바일 지원시)
+        if (navigator.vibrate) {
+            navigator.vibrate([200, 100, 200]);
+        }
 
         this.uiElements.instruction.setText(`${this.currentFish.name}을(를) 잡았습니다!`);
 
@@ -637,34 +1105,49 @@ export default class GameScene extends Phaser.Scene {
 
             let title = '';
             if (count === 10 && !model.fishMilestonesSeen[fishId][10]) {
-                title = '왕자';
+                const titles10 = ['사냥꾼', '초보 학살자', '스토커', '단골손님', '원수'];
+                title = titles10[Math.floor(Math.random() * titles10.length)];
                 model.fishMilestonesSeen[fishId][10] = true;
             } else if (count === 20 && !model.fishMilestonesSeen[fishId][20]) {
-                title = '왕';
+                const titles20 = ['파멸의 인도자', '재앙', '포식자', '전문 사냥꾼', '공포의 대왕'];
+                title = titles20[Math.floor(Math.random() * titles20.length)];
                 model.fishMilestonesSeen[fishId][20] = true;
             } else if (count === 50 && !model.fishMilestonesSeen[fishId][50]) {
-                title = '대마왕';
+                const titles50 = ['씨를 말린 자', '멸종 위기 주범', '절대신', '마왕', '전설의 학살자'];
+                title = titles50[Math.floor(Math.random() * titles50.length)];
                 model.fishMilestonesSeen[fishId][50] = true;
             }
 
             if (title !== '') {
                 model.notify(); // 저장
-                milestoneStoryData = [
-                    { speaker: '상점 할아버지', portrait: null, text: `허허! ${fishName}만 ${count}마리를 낚다니!\n너에게 [ ${fishName} ${title} ] 칭호를 주마!` },
-                    { speaker: '정우', portrait: 'char_jeongwoo', text: `감사합니다! 제가 바로 ${fishName} ${title}입니다!!` }
-                ];
+                if (count === 10) {
+                    milestoneStoryData = [
+                        { speaker: '상점 할아버지', portrait: 'char_shopkeeper', text: `허허! ${fishName}만 ${count}마리를 낚다니!\n너에게 [ ${fishName} ${title} ] 칭호를 주마!` },
+                        { speaker: '정우', portrait: 'char_jeongwoo', text: `감사합니다! 제가 바로 ${fishName} ${title}입니다!!` }
+                    ];
+                } else if (count === 20) {
+                    milestoneStoryData = [
+                        { speaker: '아빠', portrait: 'char_dad', text: `정우야! 낚시 뉴스에 네 이름이 나왔단다!\n[ ${fishName} ${title} ] 이라고 부르더구나!` },
+                        { speaker: '정우', portrait: 'char_jeongwoo', text: `헉! 텔레비전에 내가 나왔다고?! 대박!` }
+                    ];
+                } else if (count === 50) {
+                    milestoneStoryData = [
+                        { speaker: '세연', portrait: 'char_seyeon', text: `오빠! 동네 할아버지가 오빠보고\n[ ${fishName} ${title} ] 래! 무서워~` },
+                        { speaker: '정우', portrait: 'char_jeongwoo', text: `크하하! 바다의 모든 ${fishName}은 내가 접수한다!` }
+                    ];
+                }
+            } else if (count === 1 && FIRST_CATCH_STORIES[fishId]) {
+                // 첫 획득 대사
+                milestoneStoryData = FIRST_CATCH_STORIES[fishId];
+            }
 
-                // 특정 물고기에 대한 재미있는 대사 추가
-                if (fishName === '붕어') {
-                    milestoneStoryData.push({ speaker: '세연', portrait: 'char_seyeon', text: '오빠!! 붕어빵은 왜 안나와?? 붕어빵 먹고 싶어!' });
-                } else if (fishName === '피라미') {
-                    milestoneStoryData.push({ speaker: '아빠', portrait: 'char_dad', text: '정우야, 피라미드랑 피라미는 다른거란다 하하하!' });
-                } else if (fishName === '미꾸라지') {
-                    milestoneStoryData.push({ speaker: '엄마', portrait: 'char_mom', text: '어휴 미끌미끌해라! 오늘 저녁은 추어탕이다!' });
-                } else if (fishName === '고등어') {
-                    milestoneStoryData.push({ speaker: '엄마', portrait: 'char_mom', text: '고갈비 해먹으면 참 맛있겠네~ 구워먹자!' });
-                } else if (fishName === '참돔') {
-                    milestoneStoryData.push({ speaker: '상점 할아버지', portrait: null, text: '그 귀한 참돔을 이리 많이 낚다니... 넌 전설이다 꼬마야!' });
+            // 보스 조우 대사가 최우선 적용 (마왕 1~3회차)
+            if (isBossCatch) {
+                const bCount = pm.bossDefeatedCount[this.region];
+                // 1회, 2회, 3회차 대사 중 알맞은 것 선택. 3회 이후는 3회차 반복 또는 스킵
+                if (BOSS_STORIES[this.region]) {
+                    const storyIndex = Math.min(bCount - 1, 2);
+                    milestoneStoryData = BOSS_STORIES[this.region][storyIndex];
                 }
             }
         }
@@ -711,7 +1194,12 @@ export default class GameScene extends Phaser.Scene {
                         '찌글찌글한 고철 덩어리가 올라왔어요. 지구가 아파해요!',
                         '물고기 대신 쓰레기가... 바다를 더 아껴줘야겠어요.',
                         '이런! 바닷속에 쓰레기가 너무 많나 봐요.',
-                        '어머나, 빈 병이 올라왔네요. 분리수거를 잘해야겠어요!'
+                        '어머나, 빈 병이 올라왔네요. 분리수거를 잘해야겠어요!',
+                        '누가 먹다 버린 아이스크림 막대기네요. 개미들이 좋아하려나?',
+                        '낡은 고무장갑 한 짝? 바다 요정이 설거지하다 놓쳤나 봐요!',
+                        '바다거북인 줄 알았는데... 커다란 비닐봉지였어요!! 쓰레기 미워!',
+                        '녹슨 바퀴 휠! 아빠 자동차 바퀴가 하나 없어졌는지 확인해봐야겠어요.',
+                        '어라? 편지가 든 유리병 고물... "세연아 까까 사줘"라고 적혀있네요?'
                     ];
                     const randomMsg = trashMessages[Math.floor(Math.random() * trashMessages.length)];
                     this.uiElements.instruction.setText(randomMsg);
@@ -726,9 +1214,9 @@ export default class GameScene extends Phaser.Scene {
                     finalGold = Math.floor(finalGold * 1.2);
                     this.cameras.main.flash(300, 255, 215, 0); // 황금색 플래시 보너스 피드백
 
-                    // 수학 퀴즈 맞춘 후 타이핑 퀴즈 (보물섬은 50%, 기본 35%)
+                    // 수학 퀴즈 맞춘 후 타이핑 퀴즈 (N등급 제외, 보물섬은 50%, 기본 35%)
                     const typingQuizChance = this.region === 4 ? 0.50 : 0.35;
-                    if (Math.random() < typingQuizChance) {
+                    if (this.currentFish.grade !== 'N' && Math.random() < typingQuizChance) {
                         showTypingQuiz = true;
                     }
                 } else if (quizResult === false) {
@@ -838,7 +1326,7 @@ export default class GameScene extends Phaser.Scene {
                         this.scene.start('StoryScene', {
                             storyData: midStoryData,
                             nextScene: 'GameScene',
-                            nextSceneData: {}
+                            nextSceneData: { region: this.region }
                         });
                         return;
                     }
@@ -850,12 +1338,40 @@ export default class GameScene extends Phaser.Scene {
                 this.triggerTreasureIslandEvent();
             }
 
-            // --- 마일스톤 달성 스토리(칭호) ---
-            if (milestoneStoryData) {
+            // --- 콤보 스토리 ---
+            let comboStoryData = null;
+            const cCount = window.gameManagers.playerModel.comboCount; // Use the updated comboCount
+
+            if (cCount === 10) {
+                comboStoryData = [
+                    { speaker: '세연', portrait: 'char_seyeon', text: '오빠!! 10번이나 연속으로 올렸어!\n이따 편의점 데려가 줄 거지?!' },
+                    { speaker: '정우', portrait: 'char_jeongwoo', text: '하하핫! 오늘 골든벨은 내가 울린다!' }
+                ];
+            } else if (cCount === 20) {
+                comboStoryData = [
+                    { speaker: '아빠', portrait: 'char_dad', text: '우리 정우 대단하구나!!\n20번 한 번도 안 놓치고 완벽해!' },
+                    { speaker: '정우', portrait: 'char_jeongwoo', text: '히힛! 아빠한테 배운 기술 덕분이에요!' }
+                ];
+            } else if (cCount === 30) {
+                comboStoryData = [
+                    { speaker: '상점 할아버지', portrait: 'char_shopkeeper', text: '허허... 30연속 콤보라니...\n내 낡은 낚싯대가 명검이 되었구먼.' },
+                    { speaker: '정우', portrait: 'char_jeongwoo', text: '할아버지! 저 이제 바다의 왕자라고 불러주세요!' }
+                ];
+            } else if (cCount >= 50 && cCount % 50 === 0) {
+                comboStoryData = [
+                    { speaker: '정우', portrait: 'char_jeongwoo', text: `우하하하!! 기적의 ${cCount}콤보!!\n바다에 있는 모든 고기들아 다 내게로 오라!!!` },
+                    { speaker: '세연', portrait: 'char_seyeon', text: '오빠 너무 시끄러워~ 물고기 도망가겠다 쉿!' },
+                    { speaker: '아빠', portrait: 'char_dad', text: '하하... 정우야 진정하렴. 동네 사람들 다 깨겠다.' },
+                    { speaker: '상점 할아버지', portrait: 'char_shopkeeper', text: '허허... 젊다는 건 참 좋은 것이여.' }
+                ];
+            }
+
+            // 마일스톤, 콤보 등 스토리 이벤트가 있으면 씬 전환 (보스/첫도감 보다 후순위)
+            if (milestoneStoryData || comboStoryData) {
                 this.scene.start('StoryScene', {
-                    storyData: milestoneStoryData,
+                    storyData: milestoneStoryData || comboStoryData,
                     nextScene: 'GameScene',
-                    nextSceneData: {}
+                    nextSceneData: { region: this.region }
                 });
                 return;
             }
@@ -874,8 +1390,31 @@ export default class GameScene extends Phaser.Scene {
         this.lineTension = 0;
         this.clearApproachFishes();
 
+        // UI 초기화
+        this.uiElements.gaugeBg.setVisible(false);
+        this.uiElements.gaugeBar.setVisible(false);
+        this.uiElements.tensionBg.setVisible(false);
+        this.uiElements.tensionBar.setVisible(false);
+        this.uiElements.tensionWarn.setVisible(false);
+
+
+        // 보스 타이머 숨김
+        if (this.uiElements.bossTimerText) this.uiElements.bossTimerText.setVisible(false);
+
+        // 콤보 리셋
+        window.gameManagers.playerModel.comboCount = 0;
+        if (this.uiElements.comboText) this.uiElements.comboText.setVisible(false);
+
         if (this.isFeverTime) this.endFeverTime();
         this.consecutiveFails++;
+
+        // 보스전 패배 처리
+        const pm = window.gameManagers.playerModel;
+        if (this.isBossFight) {
+            pm.bossFailed[this.region] = (pm.bossFailed[this.region] || 0) + 1;
+            pm.notify();
+            this.isBossFight = false;
+        }
 
         // 지역별 랜덤 실패 메시지 생성
         let finalMsg = msg;
@@ -929,6 +1468,25 @@ export default class GameScene extends Phaser.Scene {
         this.time.delayedCall(1500, () => {
             this.resetFishing();
         });
+    }
+
+    triggerTreasureIslandEvent() {
+        const events = ['event_pirate', 'event_octopus', 'event_mermaid', 'event_rainbow', 'event_ghost'];
+        const evId = events[Math.floor(Math.random() * events.length)];
+
+        const pm = window.gameManagers.playerModel;
+        pm.registerEventCard(evId);
+
+        let evName = '';
+        if (evId === 'event_pirate') evName = '멀리서 해적선 목격!';
+        else if (evId === 'event_octopus') evName = '대왕문어의 이스터에그 파동!';
+        else if (evId === 'event_mermaid') evName = '어디선가 인어의 노래가...';
+        else if (evId === 'event_rainbow') evName = '밤하늘에 쌍무지개가 떴다!';
+        else if (evId === 'event_ghost') evName = '유령선이 배회하고 있다...';
+
+        this.uiElements.instruction.setText(`🃏 [이벤트 도감 달성] ${evName}`);
+        this.cameras.main.flash(600, 138, 43, 226); // 보라색 플래시
+        window.gameManagers.soundManager.playSuccess();
     }
 
     updateGoalText() {
@@ -1108,15 +1666,22 @@ export default class GameScene extends Phaser.Scene {
     resetFishing() {
         this.gameState = 'IDLE';
         this.catchGauge = 0;
+        this.lineTension = 0;
+        this.isCharging = false;
         const regionNames = { 1: "민물", 2: "연안", 3: "먼 바다", 4: "보물섬" };
         this.uiElements.instruction.setText(`${regionNames[this.region]}을 탭(클릭)해서 찌를 던지세요!`);
         this.updateGoalText();
         this.uiElements.gaugeBg.setVisible(false);
         this.uiElements.gaugeBar.setVisible(false);
+        this.uiElements.tensionBg.setVisible(false);
+        this.uiElements.tensionBar.setVisible(false);
+        this.uiElements.tensionWarn.setVisible(false);
+        if (this.uiElements.bossTimerText) this.uiElements.bossTimerText.setVisible(false);
 
-        // 과녁 힌트 다시 표시
-        if (this.uiElements.targetHint) this.uiElements.targetHint.setVisible(true);
-        if (this.uiElements.targetHintInner) this.uiElements.targetHintInner.setVisible(true);
+
+        // 과녁 힌트 다시 표시 (위치 재설정)
+        // 과녁 재설정 (repositionTargetRing이 알아서 배열을 갱신하고 화면에 표시함)
+        this.repositionTargetRing();
     }
 
     update(time, delta) {
@@ -1142,8 +1707,21 @@ export default class GameScene extends Phaser.Scene {
             });
         }
 
-        // Catch 단계: 가만히 있으면 게이지 하락 (방해 요소)
+        // CATCH 상태에서의 게이지 자연 감소 로직 및 미니게임 루프
         if (this.gameState === 'CATCH') {
+            // 보스 타임 리밋 처리
+            if (this.isBossFight) {
+                this.bossTimer += delta;
+                const timeLeft = Math.max(0, this.bossTimeLimit - (this.bossTimer / 1000));
+                this.uiElements.bossTimerText.setText(`마왕 제한시간: ${timeLeft.toFixed(1)}초`);
+                this.uiElements.bossTimerText.setVisible(true);
+
+                if (timeLeft <= 0) {
+                    this.failFishing('시간 초과! 마왕이 도망갔다...');
+                    return;
+                }
+            }
+
             // --- Fever Time 타이머 ---
             if (this.isFeverTime) {
                 this.feverTimeRemaining -= delta;
@@ -1170,20 +1748,73 @@ export default class GameScene extends Phaser.Scene {
                     else if (this.currentFish.grade === 'SSR') baseDrop = 150;
                 }
 
-                // 스탯 Reel Speed에 의해 초당 감소폭 완화 (레벨당 3 방어)
-                const dropRate = Math.max(5, baseDrop - (reelLevel * 3));
+                // 스탯 Reel Speed에 의해 초당 감소폭 완화 (레벨당 1.5 방어, Lv20 기준 30 방어 = 기존 Lv10)
+                const dropRate = Math.max(5, baseDrop - (reelLevel * 1.5));
 
-                this.catchGauge -= (dropRate * (delta / 1000));
+                // 0.3초 여유 시간 (catchGraceTimer) 적용
+                if (this.catchGraceTimer > 0) {
+                    this.catchGraceTimer -= delta;
+                } else {
+                    this.catchGauge -= (dropRate * (delta / 1000));
+                }
             }
 
             // 장력(Tension) 자연 감소 (연타 안 하면 서서히 내려감)
             this.lineTension = Math.max(0, this.lineTension - 0.3 * (delta / 1000));
+
+            // --- charge 미니게임: 누르고 있으면 게이지/텐션 상승 ---
+            if (this.miniGameType === 'charge' && this.isCharging) {
+                this.chargeTimer += delta;
+                if (this.chargeTimer >= 100) { // 0.1초마다틱
+                    this.chargeTimer = 0;
+                    const powerLevel = window.gameManagers.playerModel.stats.rodPower;
+                    const reelLevel = window.gameManagers.playerModel.stats.reelSpeed;
+                    const fishDifficulty = this.currentFish.difficulty || 1.0;
+                    // FishData.js의 generateFish 호출 (multiplier 인자 추가)
+                    const caughtFish = window.gameManagers.fishData.generateFish(
+                        this.region,
+                        window.gameManagers.playerModel.stats.rodLuck,
+                        this.comboCount,
+                        this.castingBonus,
+                        this.castingMultiplier || 1
+                    );    // 연타(mash)의 ~30% 수준 진행도 (초 단위 환산시 초당 약 3배 빠름 -> 밸런스)
+                    const progress = Math.max(3, (powerLevel * reelLevel) / fishDifficulty) * 0.4;
+
+                    this.catchGauge += progress;
+
+                    // 텐션 증가도 서서히 (0.1초당 0.04 -> 초당 0.4)
+                    this.lineTension = Phaser.Math.Clamp(this.lineTension + 0.04, 0, 1);
+
+                    const safeLimit = this.getTensionSafeLimit();
+                    if (this.lineTension >= 0.95) {
+                        this.cameras.main.shake(300, 0.03);
+                        this.failFishing('앗! 줄이 끊어졌어요! 너무 세게 당겼나봐요...');
+                        return;
+                    } else if (this.lineTension >= safeLimit) {
+                        this.uiElements.tensionWarn.setText('⚠️ 너무 세게! 줄이 끊어질 것 같아!');
+                        this.uiElements.tensionWarn.setVisible(true);
+                    } else {
+                        this.uiElements.tensionWarn.setText('');
+                    }
+                    this.cameras.main.shake(50, 0.002);
+                }
+            }
+
+            // --- 타이밍 게임 바 이동 ---
+            if (this.miniGameType === 'timing') {
+                const speed = 0.5 * (delta / 1000); // 초당 0.5 이동
+                this.timingBarX += speed * this.timingBarDir;
+                if (this.timingBarX > 1) { this.timingBarX = 1; this.timingBarDir = -1; }
+                if (this.timingBarX < 0) { this.timingBarX = 0; this.timingBarDir = 1; }
+            }
 
             if (this.catchGauge <= 0) {
                 this.catchGauge = 0;
                 // 하락해서 0이 되면 놓침
                 this.cameras.main.zoomTo(1, 300);
                 this.failFishing('놓쳤습니다...');
+            } else if (this.catchGauge >= this.catchMax) {
+                this.successFishing();
             } else {
                 this.updateGaugeUI();
             }

@@ -14,10 +14,10 @@ body {
     align-items: center;
     height: 100vh;
     overflow: hidden;
-    /* 모바일 브라우저 기본 제스처(스와이프/새로고침/더블탭 줌) 완벽 차단 */
-    touch-action: none;
+    /* 모바일 브라우저 기본 제스처 완벽 차단은 body 전체보단 캔버스에 집중 */
     overscroll-behavior: none;
     font-family: 'Arial', sans-serif;
+    touch-action: pan-x pan-y;
 }
 
 /* 게임 캔버스 컨테이너 */
@@ -32,6 +32,8 @@ body {
 
 #game-container canvas {
     display: block;
+    touch-action: none;
+    /* 게임화면 터치시 스크롤 방지 */
 }
 
 /* UI 오버레이 (상점 등) */
@@ -808,4 +810,61 @@ body {
     font-size: 60px;
     margin-top: -30px;
     margin-bottom: 10px;
+}
+
+/* --- Phase 4 새로 추가된 애니메이션 --- */
+@keyframes magic-circle-spin {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg) scale(0.8);
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg) scale(1.5);
+        opacity: 0;
+    }
+}
+
+.magic-circle-anim {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    border: 5px dashed #FF69B4;
+    border-radius: 50%;
+    box-shadow: 0 0 20px #FF1493, inset 0 0 20px #FF1493;
+    animation: magic-circle-spin 1.5s ease-out forwards;
+    pointer-events: none;
+    z-index: 100;
+}
+
+@keyframes shake-screen {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    25% {
+        transform: translate(-5px, 5px) rotate(-1deg);
+    }
+
+    50% {
+        transform: translate(5px, -5px) rotate(1deg);
+    }
+
+    75% {
+        transform: translate(-5px, -5px) rotate(-1deg);
+    }
+
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+}
+
+.screen-shake-anim {
+    animation: shake-screen 0.3s ease-in-out infinite;
 }

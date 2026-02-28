@@ -59,8 +59,8 @@ export default class StoryScene extends Phaser.Scene {
             lineSpacing: 10
         }).setOrigin(0, 0);
 
-        // 건너뛰기 버튼 (좌측 상단)
-        const skipBtn = this.add.text(20, 20, '⏭️ 건너뛰기', {
+        // 건너뛰기 버튼 (위치 하향 조정: 24, 80 - 모바일 노치 회피)
+        const skipBtn = this.add.text(24, 80, '⏭️ 건너뛰기', {
             fontSize: '20px',
             fontFamily: 'Arial',
             color: '#FFFFFF',
@@ -130,11 +130,15 @@ export default class StoryScene extends Phaser.Scene {
             this.portraitImage.setTexture(data.portrait);
             this.portraitImage.setVisible(true);
 
-            // 등장 애니메이션 (표준 0.45 배율로 통일)
-            this.portraitImage.setScale(0.4);
+            // 초상화 시각적 크기 고정 (512 기준 0.45배 = 약 230px)
+            const targetPortraitSize = 230;
+            const targetScale = targetPortraitSize / this.portraitImage.width;
+
+            // 등장 애니메이션
+            this.portraitImage.setScale(targetScale * 0.88);
             this.tweens.add({
                 targets: this.portraitImage,
-                scale: 0.45,
+                scale: targetScale,
                 duration: 250,
                 ease: 'Back.easeOut'
             });
@@ -158,7 +162,17 @@ export default class StoryScene extends Phaser.Scene {
         // 페이드 아웃 후 전환
         this.cameras.main.fadeOut(500, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
-            this.scene.start(this.nextScene, this.nextSceneData);
+            if (this.nextSceneData && this.nextSceneData.isOverlay) {
+                this.scene.stop();
+                if (window.gameManagers._phaserGame) {
+                    window.gameManagers._phaserGame.scene.resume(this.nextScene);
+                    if (this.nextSceneData.onClose) {
+                        this.nextSceneData.onClose();
+                    }
+                }
+            } else {
+                this.scene.start(this.nextScene, this.nextSceneData);
+            }
         });
     }
 }

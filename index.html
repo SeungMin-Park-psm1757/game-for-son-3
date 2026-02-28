@@ -30,10 +30,9 @@
 
             data.highestChapter = 4;
             data.currentChapter = 4;
-            data.gold = (data.gold || 0) + 100000;
-
+            data.gold = (data.gold || 0) + 10000;
             localStorage.setItem('fishingGameData', JSON.stringify(data));
-            alert('치트키 활성화!\n모든 지역 해금 + 10만 골드 지급!');
+            alert('치트키 활성화!\n모든 지역 해금 + 1만 골드 지급!');
 
             // 깨끗한 URL로 이동 (파라미터 제거)
             window.location.href = window.location.origin + window.location.pathname;
@@ -52,8 +51,28 @@
         가로 화면으로 돌려서<br>플레이해 주세요!
     </div>
 
+    <div id="debug-overlay"
+        style="position:fixed;top:0;left:0;width:100%;background:rgba(255,0,0,0.8);color:white;z-index:9999;pointer-events:none;padding:10px;font-size:12px;display:none;word-wrap:break-word;max-height:50vh;overflow-y:auto;">
+    </div>
+    <script>
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            var debugDiv = document.getElementById('debug-overlay');
+            if (debugDiv) {
+                debugDiv.style.display = 'block';
+                debugDiv.innerHTML += '<p>Error: ' + msg + '<br>Line: ' + lineNo + ':' + columnNo + '<br>File: ' + url + '</p>';
+            }
+            return false;
+        };
+        window.addEventListener("unhandledrejection", function (event) {
+            var debugDiv = document.getElementById('debug-overlay');
+            if (debugDiv) {
+                debugDiv.style.display = 'block';
+                debugDiv.innerHTML += '<p>Unhandled Promise Rejection: ' + event.reason + '</p>';
+            }
+        });
+    </script>
     <!-- ES6 Module Entry -->
-    <script type="module" src="src/main.js?v=20260227b"></script>
+    <script type="module" src="src/main.js?v=20260228j"></script>
 </body>
 
 </html>

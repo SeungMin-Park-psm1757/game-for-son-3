@@ -15,13 +15,29 @@ export default class PlayerModel {
             this.hasSeenFirstStory = savedData.hasSeenFirstStory || false;
             this.hasSeenMidChapterEvent = savedData.hasSeenMidChapterEvent || {};
             this.fishMilestonesSeen = savedData.fishMilestonesSeen || {};
+            // --- 신규 필드: 간식/집 꾸미기 ---
+            this.snacksPurchased = savedData.snacksPurchased || {};
+            this.decorPurchased = savedData.decorPurchased || {};
+            // --- 신규 필드: 이벤트 카드 도감 ---
+            this.eventCards = savedData.eventCards || {};
+            // --- 신규 필드: 보스 기록 ---
+            this.bossDefeated = savedData.bossDefeated || {};
+            this.bossFailed = savedData.bossFailed || {};
+            this.bossDefeatedCount = savedData.bossDefeatedCount || {};
+            // --- 신규 필드: MAX 레벨 격려 본 여부 ---
+            this.maxLevelCelebrated = savedData.maxLevelCelebrated || {};
+            this.allMaxCelebrated = savedData.allMaxCelebrated || false;
+            // --- 신규 필드: 세연이 51개 이벤트 관람 여부 ---
+            this.seyeonMaxEventSeen = savedData.seyeonMaxEventSeen || {};
+
         } else {
             this.gold = 0;
             this.stats = {
                 rodPower: 1,      // 클릭 1회당 오르는 게이지
                 catchChance: 1,   // 입질 확률 증가 (기본 대기시간 단축)
                 reelSpeed: 1,     // 연타 효율 강화 혹은 자동 게이지 하락 방지
-                rodLuck: 1        // 희귀 보상 획득 확률
+                rodLuck: 1,       // 희귀 보상 획득 확률
+                focusRing: 1      // 찌 던질 때 과녁 크기 복구 (기본 1/3, 최대 3)
             };
             this.fishCollection = {};
             this.currentChapter = 1;
@@ -29,8 +45,21 @@ export default class PlayerModel {
             this.hasSeenFirstStory = false;
             this.hasSeenMidChapterEvent = {};
             this.fishMilestonesSeen = {};
+            this.snacksPurchased = {};
+            this.decorPurchased = {};
+            this.eventCards = {};
+            this.bossDefeated = {};
+            this.bossFailed = {};
+            this.bossDefeatedCount = {};
+            this.maxLevelCelebrated = {};
+            this.allMaxCelebrated = false;
+            this.seyeonMaxEventSeen = {};
+
         }
         this.listeners = [];
+
+        // 세션 한정 상태 (저장하지 않음)
+        this.comboCount = 0;
 
         // 챕터별 목표 금액
         this.chapterGoals = {
@@ -58,7 +87,17 @@ export default class PlayerModel {
             highestChapter: this.highestChapter,
             hasSeenFirstStory: this.hasSeenFirstStory,
             hasSeenMidChapterEvent: this.hasSeenMidChapterEvent,
-            fishMilestonesSeen: this.fishMilestonesSeen
+            fishMilestonesSeen: this.fishMilestonesSeen,
+            snacksPurchased: this.snacksPurchased,
+            decorPurchased: this.decorPurchased,
+            eventCards: this.eventCards,
+            bossDefeated: this.bossDefeated,
+            bossFailed: this.bossFailed,
+            bossDefeatedCount: this.bossDefeatedCount,
+            maxLevelCelebrated: this.maxLevelCelebrated,
+            allMaxCelebrated: this.allMaxCelebrated,
+            seyeonMaxEventSeen: this.seyeonMaxEventSeen
+
         });
     }
 
@@ -114,4 +153,49 @@ export default class PlayerModel {
         }
         return false;
     }
+
+    // 이벤트 카드 등록
+    registerEventCard(cardId) {
+        if (!this.eventCards[cardId]) {
+            this.eventCards[cardId] = {
+                discovered: true,
+                firstSeenDate: new Date().toISOString(),
+                count: 1
+            };
+        } else {
+            this.eventCards[cardId].count = (this.eventCards[cardId].count || 0) + 1;
+        }
+        this.notify();
+    }
+
+    // 간식/집 꾸미기 구매
+    purchaseSnack(snackId, cost) {
+        if (this.gold >= cost) {
+            this.gold -= cost;
+            this.snacksPurchased[snackId] = (this.snacksPurchased[snackId] || 0) + 1;
+            this.notify();
+            return true;
+        }
+        return false;
+    }
+
+    purchaseDecor(decorId, cost) {
+        if (this.gold >= cost) {
+            this.gold -= cost;
+            this.decorPurchased[decorId] = (this.decorPurchased[decorId] || 0) + 1;
+            this.notify();
+            return true;
+        }
+        return false;
+    }
+
+    // --- 치트 기능: 모든 물고기 잡은 횟수 설정 ---
+    cheatSetAllFish(fishIds, count = 8) {
+        fishIds.forEach(id => {
+            this.fishCollection[id] = count;
+        });
+        this.notify();
+    }
+
 }
+

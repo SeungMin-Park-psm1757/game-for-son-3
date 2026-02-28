@@ -1,48 +1,36 @@
-import sys
-import subprocess
 import os
+from PIL import Image, ImageDraw
 
-def install_deps():
-    print("Checking dependencies...")
+image_dir = r"c:\AI\my DeepL 2\game-for-son-3\assets\images"
+
+def remove_background(filepath):
     try:
-        import rembg
-        from PIL import Image
-    except ImportError:
-        print("Installing rembg and pillow. This may take a minute...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "rembg", "pillow"])
+        img = Image.open(filepath).convert("RGBA")
+        width, height = img.size
         
-def process_images():
-    from rembg import remove
-    from PIL import Image
-
-    files = [
-        "lure.png",
-        "fish_anchovy.png",
-        "fish_crucian.png",
-        "fish_salmon.png",
-        "fish_golden_koi.png"
-    ]
-
-    base_dir = "e:/AI2/game-for-son-3/assets/images"
-
-    for file_name in files:
-        input_path = os.path.join(base_dir, file_name)
-        if not os.path.exists(input_path):
-            print(f"File not found: {input_path}")
-            continue
+        # Check corners to see if they are a solid non-transparent background
+        corners = [(0, 0), (width-1, 0), (0, height-1), (width-1, height-1)]
+        processed = False
+        
+        for cx, cy in corners:
+            bg_pixel = img.getpixel((cx, cy))
+            # If the pixel is not transparent, we flood fill from it
+            if bg_pixel[3] > 0:
+                ImageDraw.floodfill(img, xy=(cx, cy), value=(255, 255, 255, 0), thresh=5)
+                processed = True
+                
+        if processed:
+            img.save(filepath, "PNG")
+            print(f"Transformed background to transparent: {os.path.basename(filepath)}")
             
-        print(f"Processing {input_path}...")
-        try:
-            input_image = Image.open(input_path)
-            
-            # Using alpha matting to help clean edges
-            output_image = remove(input_image, alpha_matting=True)
-            output_image.save(input_path)
-            print(f"Success: {input_path}")
-        except Exception as e:
-            print(f"Error processing {file_name}: {e}")
+    except Exception as e:
+        print(f"Error processing {filepath}: {e}")
 
 if __name__ == "__main__":
-    install_deps()
-    process_images()
-    print("All done!")
+    count = 0
+    for filename in os.listdir(image_dir):
+        if filename.endswith(".png") and (filename.startswith("item_") or filename.startswith("fish_")):
+            filepath = os.path.join(image_dir, filename)
+            remove_background(filepath)
+            count += 1
+    print(f"Processed {count} image files.")

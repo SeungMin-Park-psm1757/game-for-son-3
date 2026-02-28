@@ -54,9 +54,12 @@ export default class EndingScene extends Phaser.Scene {
         this.dialogBg = this.add.rectangle(width / 2, height * 0.75, width * 0.9, 180, 0x000000, 0.7)
             .setDepth(10);
 
-        // 초상화 (512x512 표준 기반)
-        this.portrait = this.add.image(120, height * 0.75, 'char_jeongwoo')
-            .setDepth(11).setScale(0.45);
+        // 초상화 (시각적 크기 약 230px 타겟)
+        this.portrait = this.add.image(120, height * 0.75, 'char_jeongwoo').setDepth(11);
+        const targetPortraitSize = 230;
+        const basePortraitScale = targetPortraitSize / this.portrait.width;
+        this.portrait.setScale(basePortraitScale);
+        this.portrait.setData('baseScale', basePortraitScale);
 
         // 이름표
         this.speakerText = this.add.text(240, height * 0.75 - 60, '', {
@@ -116,8 +119,9 @@ export default class EndingScene extends Phaser.Scene {
             this.portrait.setTexture(line.portrait);
         }
 
-        // 등장 애니메이션 (표준 0.45 배율 기반)
-        this.tweens.add({ targets: this.portrait, scale: { from: 0.4, to: 0.45 }, duration: 200 });
+        // 등장 애니메이션
+        const baseScale = this.portrait.getData('baseScale') || (230 / this.portrait.width);
+        this.tweens.add({ targets: this.portrait, scale: { from: baseScale * 0.88, to: baseScale }, duration: 200 });
     }
 
     showCredits() {
