@@ -613,10 +613,23 @@ body {
 }
 
 /* 진짜 이미지 스프라이트 표시 */
+.fish-img-container {
+    width: 100px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
 .fish-img-sprite {
-    width: 64px;
+    max-width: 90%;
+    max-height: 90%;
+    width: auto;
     height: auto;
-    margin: 10px 0;
     image-rendering: crisp-edges;
     image-rendering: pixelated;
     /* 레트로 감성 도트 유지 */

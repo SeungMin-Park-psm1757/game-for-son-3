@@ -30,6 +30,10 @@ export default class PlayerModel {
             // --- 신규 필드: 세연이 51개 이벤트 관람 여부 ---
             this.seyeonMaxEventSeen = savedData.seyeonMaxEventSeen || {};
 
+            // --- Existing player stat migration: ensure focusRing exists ---
+            if (this.stats && this.stats.focusRing === undefined) {
+                this.stats.focusRing = 1;
+            }
         } else {
             this.gold = 0;
             this.stats = {
@@ -135,8 +139,9 @@ export default class PlayerModel {
         const MAX_LEVELS = {
             rodPower: 20,
             catchChance: 10,
-            reelSpeed: 10,
-            rodLuck: 5
+            reelSpeed: 20,
+            rodLuck: 5,
+            focusRing: 3
         };
 
         const currentLevel = this.stats[statName];

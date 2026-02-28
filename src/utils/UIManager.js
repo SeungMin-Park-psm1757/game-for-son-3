@@ -836,7 +836,9 @@ export default class UIManager {
             if (isDiscovered) {
                 fishCardsHTML += `
                     <div class="fish-card discovered">
-                        <img src="assets/images/${fish.id}.png" class="fish-img-sprite zoomable-fish" style="transform: scale(${Math.min(1.2, fish.scale)});" />
+                        <div class="fish-img-container">
+                            <img src="assets/images/${fish.id}.png" class="fish-img-sprite" />
+                        </div>
                         <h3>${fish.name}</h3>
                         <p class="fish-grade grade-${fish.grade}">등급: ${fish.grade}</p>
                         <p class="fish-count">포획 수: ${count}마리</p>
@@ -846,7 +848,9 @@ export default class UIManager {
             } else {
                 fishCardsHTML += `
                     <div class="fish-card undiscovered">
-                        <img src="assets/images/${fish.id}.png" class="fish-img-sprite silhouette-img" style="transform: scale(${Math.min(1.2, fish.scale)});" />
+                        <div class="fish-img-container">
+                            <img src="assets/images/${fish.id}.png" class="fish-img-sprite silhouette-img" />
+                        </div>
                         <h3>???</h3>
                         <p class="fish-grade">등급: ???</p>
                         <p class="fish-count">포획 수: 0마리</p>
@@ -869,65 +873,6 @@ export default class UIManager {
 
         this.container.innerHTML = encyclopediaHTML;
         this.currentPopup = document.getElementById('encyclopedia-popup');
-
-        // 이미지 확대 기능 추가
-        const zoomableImages = this.container.querySelectorAll('.zoomable-fish');
-        zoomableImages.forEach(img => {
-            img.style.cursor = 'pointer';
-            img.style.transition = 'transform 0.3s ease, z-index 0.3s';
-            img.addEventListener('click', function (e) {
-                // 확대/축소 토글
-                if (this.classList.contains('zoomed')) {
-                    this.classList.remove('zoomed');
-                    this.style.position = 'static';
-                    this.style.transform = this.getAttribute('data-original-transform');
-                    this.style.zIndex = '1';
-
-                    // 오버레이 제거
-                    const overlay = document.getElementById('zoom-overlay');
-                    if (overlay) overlay.remove();
-                } else {
-                    this.setAttribute('data-original-transform', this.style.transform);
-                    this.classList.add('zoomed');
-
-                    // 화면 중앙으로 크게 확대
-                    const rect = this.getBoundingClientRect();
-                    const centerX = window.innerWidth / 2;
-                    const centerY = window.innerHeight / 2;
-
-                    // 원래 위치 기억을 위해 스타일 조정 대신 fixed position 사용
-                    this.style.position = 'fixed';
-                    this.style.top = (rect.top) + 'px';
-                    this.style.left = (rect.left) + 'px';
-                    this.style.zIndex = '1000';
-
-                    // 다음 프레임에서 중앙으로 이동하며 크게 확대
-                    requestAnimationFrame(() => {
-                        this.style.top = '50%';
-                        this.style.left = '50%';
-                        this.style.transform = 'translate(-50%, -50%) scale(3.0)';
-                    });
-
-                    // 배경 어둡게 하는 오버레이 추가
-                    const overlay = document.createElement('div');
-                    overlay.id = 'zoom-overlay';
-                    overlay.style.position = 'fixed';
-                    overlay.style.top = '0';
-                    overlay.style.left = '0';
-                    overlay.style.width = '100vw';
-                    overlay.style.height = '100vh';
-                    overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
-                    overlay.style.zIndex = '999';
-                    overlay.style.transition = 'opacity 0.3s';
-                    document.body.appendChild(overlay);
-
-                    // 오버레이 클릭 시 원래대로 복구
-                    overlay.onclick = () => {
-                        this.click(); // 이미지 클릭 이벤트 재호출
-                    };
-                }
-            });
-        });
 
         document.getElementById('book-close-btn').onclick = () => { this.closePopup(); };
     }
@@ -965,7 +910,9 @@ export default class UIManager {
             if (isDiscovered) {
                 fishCardsHTML += `
                     <div class="fish-card discovered" style="border-color: ${titleText !== '없음' ? '#FFD700' : '#DEB887'};">
-                        <img src="assets/images/${fish.id}.png" class="fish-img-sprite" style="transform: scale(${Math.min(1.2, fish.scale)});" />
+                        <div class="fish-img-container">
+                            <img src="assets/images/${fish.id}.png" class="fish-img-sprite" />
+                        </div>
                         <h3>${fish.name}</h3>
                         <p class="fish-count">총 <strong>${count}</strong>마리</p>
                         <p class="fish-title ${titleClass}">칭호: ${titleText}</p>
@@ -974,7 +921,9 @@ export default class UIManager {
             } else {
                 fishCardsHTML += `
                     <div class="fish-card undiscovered">
-                        <img src="assets/images/${fish.id}.png" class="fish-img-sprite silhouette-img" style="transform: scale(${Math.min(1.2, fish.scale)});" />
+                        <div class="fish-img-container">
+                            <img src="assets/images/${fish.id}.png" class="fish-img-sprite silhouette-img" />
+                        </div>
                         <h3>???</h3>
                         <p class="fish-count">0마리</p>
                         <p class="fish-title">칭호: 없음</p>
