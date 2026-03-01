@@ -240,6 +240,13 @@ export default class UIManager {
         this.container.innerHTML = '';
         this.container.style.pointerEvents = 'none';
         this.isQuizActive = false;
+
+        // StoryScene이 일시정지 중이면 다시 시작
+        const phaserGame = window.gameManagers._phaserGame;
+        if (phaserGame && phaserGame.scene.isPaused('StoryScene')) {
+            phaserGame.scene.resume('StoryScene');
+        }
+
         this.renderPersistentUI();
     }
 
@@ -344,6 +351,12 @@ export default class UIManager {
         if (this.isQuizActive) return;
         this.hidePersistentUI();
         this.container.style.pointerEvents = 'auto';
+
+        // StoryScene이 실행 중이면 일시정지
+        const phaserGame = window.gameManagers._phaserGame;
+        if (phaserGame && phaserGame.scene.isActive('StoryScene')) {
+            phaserGame.scene.pause('StoryScene');
+        }
 
         const shopData = {
             rodPower: { max: 20, costBase: 100, costStep: 50 },
